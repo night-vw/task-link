@@ -1,5 +1,5 @@
-import { FcGoogle } from "react-icons/fc";
 import Link from "next/link"
+import GoogleSignIn from "@/components/auth_components/GoogleSignIn";
 
 const Landing = () => {
   return (
@@ -20,13 +20,7 @@ const Landing = () => {
             Emailでログイン
           </Link>
           <p className="md:mx-4">or</p>
-          <Link
-            href="/"
-            className="flex items-center px-8 py-3 border border-transparent text-sm font-semibold rounded-md text-gray-100 bg-red-500 hover:bg-red-600"
-          >
-            <FcGoogle className="mr-2" />
-            Googleでログイン
-          </Link>
+          <GoogleSignIn/>
         </div>
       </main>
 

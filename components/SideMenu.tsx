@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import logoImage from "@/components/image/task-link_logo.png";
 import { usePathname } from 'next/navigation';
+import LogoutButton from './auth_components/LogoutButton';
 
 const SideMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -97,11 +98,11 @@ const SideMenu = () => {
                   <div className='text-2xl mt-2'>UserName</div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel>アカウント</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Profile</DropdownMenuItem>
-                  <DropdownMenuItem>Setting</DropdownMenuItem>
-                  <DropdownMenuItem>Logout</DropdownMenuItem>
+                  <DropdownMenuItem>プロフィール</DropdownMenuItem>
+                  <DropdownMenuItem>設定</DropdownMenuItem>
+                  <LogoutButton/>
                 </DropdownMenuContent>
               </DropdownMenu>
             </li>

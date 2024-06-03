@@ -37,14 +37,14 @@ const LoginPage = () => {
             setError('メールアドレスが確認されていません。');
             break;
           default:
-            setError('サインイン中にエラーが発生しました。');
+            setError('ログイン中にエラーが発生しました。');
         }
         throw signInError;
       }
       await router.push("/");
       await router.refresh();
     } catch (error: any) {
-      console.error('サインインエラー:', error);
+      console.error('ログインエラー:', error);
       if (!error.message) {
         setError('エラーが発生しました。詳細: ' + error.message); // エラーメッセージを設定
       }
@@ -90,7 +90,7 @@ const LoginPage = () => {
           <div>
             <button
               type="submit"
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className={`w-full px-4 py-2 text-sm font-medium text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={loading}
             >
               {loading ? 'ログイン中...' : 'ログイン'}
