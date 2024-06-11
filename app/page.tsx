@@ -1,16 +1,18 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from 'next/headers';
-
+import React from "react";
+import dynamic from "next/dynamic";
 const TaskMap = async () => {
-  const supabase = createServerComponentClient({ cookies }) ;
-  const {data:user} = await supabase.auth.getSession();
-  const session = user.session;
-  console.log(session);
-
+  const Map = React.useMemo(
+    () =>
+      dynamic(() => import("@/components/Map"), {
+        loading: () => <p>A map is loading</p>,
+        ssr: false,
+      }),
+    []
+  );
   return (
     <div className="text-2xl mt-100 mt-16 md:mt-0">
-      <p>{session ? "ログイン中" : "ログアウト中"} </p>
-  </div>
+      <Map />
+    </div>
   )
 }
 

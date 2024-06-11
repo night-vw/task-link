@@ -18,12 +18,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         <div className="md:flex">
           <ClientWrapper>
-            <SideMenu />
+            <SideMenu/>
           </ClientWrapper>
-          <main>
+          <main className="flex-1">
             {children}
           </main>
         </div>
