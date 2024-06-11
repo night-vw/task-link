@@ -652,14 +652,14 @@ const MapComponent = () => {
     <div className="flex justify-end mt-4">
       <button
         onClick={handlePrevPage}
-        className="absolute left-4 bottom-6 p-2 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none"
+        className="absolute left-4 bottom-6 p-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none"
         disabled={currentPage === 0}
         style={{ display: currentPage === 0 ? 'none' : 'block' }}
       ><IoArrowBack size={40}/>
       </button>
       <button
         onClick={handleNextPage}
-        className="absolute bottom-6 p-2 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none"
+        className="absolute bottom-6 p-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none"
         disabled={(currentPage + 1) * itemsPerPage >= tasks.length}
         style={{ display: (currentPage + 1) * itemsPerPage >= tasks.length ? 'none' : 'block' }}
       ><IoArrowForward size={40}/>
