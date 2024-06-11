@@ -7,7 +7,10 @@ import { FaSearch, FaTimes } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { BiCurrentLocation } from "react-icons/bi";
 import { BsX } from "react-icons/bs";
-import { IoIosList } from "react-icons/io";
+import { IoIosList,IoMdPin  } from "react-icons/io";
+import { IoArrowBack } from "react-icons/io5";
+import { IoArrowForward } from "react-icons/io5";
+import { MdDelete } from "react-icons/md";
 
 import 'leaflet/dist/leaflet.css';
 import map_pinIcon from '@/public/map_pin-icon.png';
@@ -19,21 +22,28 @@ import shoppingIcon from '@/public/shopping-icon.png';
 const MapComponent = () => {
   const mapRef = useRef<L.Map | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const taskListRef = useRef<HTMLDivElement | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [addingMarker, setAddingMarker] = useState(false);
   const [userMarker, setUserMarker] = useState<L.Marker | null>(null);
+  const [searchMarker, setSearchMarker] = useState<L.Marker | null>(null);
   const [activeIcon, setActiveIcon] = useState('map_pinIcon');
   const [markerPlaced, setMarkerPlaced] = useState(false);
   const [markerUrl, setMarkerUrl] = useState('/map_pin-icon.png');
   const [formVisible, setFormVisible] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [taskListVisible, setTaskListVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
   let marker_add_check = false;
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [selectedOption, setSelectedOption] = useState('on');
   const [isDisabled, setIsDisabled] = useState(false);
+  const [taskLength,setTaskLength] = useState(20);
+
+  const tasks = Array.from({ length: 50 }, (_, index) => `タスク${index + 1}`);
 
   useEffect(() => {
     const now = new Date();
@@ -50,21 +60,54 @@ const MapComponent = () => {
   }, []);
 
   useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      body {
-        overflow: hidden;
+    function handleResize() {
+      const windowHeight = window.innerHeight;
+      const windowWeight = window.innerWidth;
+      let newItemsPerPage = 12 ;
+      if (windowHeight < 700) {
+        newItemsPerPage = 9 ;
+      }else if (windowHeight < 900) {
+        newItemsPerPage = 10 ;
       }
-      ::-webkit-scrollbar {
-        display: none;
+
+      let newTaskLength = 15 ; 
+      if (windowWeight < 400) {
+        newTaskLength = 8;
+      }else if (windowWeight < 500) {
+        newTaskLength = 10 ;
+      }else if (windowWeight < 1100) {
+        newTaskLength = 12;
       }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
+
+      setTaskLength(newTaskLength);
+      setItemsPerPage(newItemsPerPage);
+    }
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const preventDefault = (e: Event) => e.preventDefault();
+  
+    if (taskListVisible) {
+      document.body.style.overflow = 'auto';
+      window.removeEventListener('wheel', preventDefault);
+      window.removeEventListener('touchmove', preventDefault);
+    } else {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('wheel', preventDefault, { passive: false });
+      window.addEventListener('touchmove', preventDefault, { passive: false });
+    }
+  
+    return () => {
+      window.removeEventListener('wheel', preventDefault);
+      window.removeEventListener('touchmove', preventDefault);
+    };
+  }, [taskListVisible]);
+  
+  
   useEffect(() => {
     const preventDefault = (e: Event) => e.preventDefault();
     window.addEventListener('wheel', preventDefault, { passive: false });
@@ -158,10 +201,12 @@ const MapComponent = () => {
           iconAnchor: [22, 38],
           popupAnchor: [-3, -38],
         });
-        L.marker([lat, lon], { icon: customIcon }).addTo(mapRef.current)
+        const marker = L.marker([lat, lon], { icon: customIcon }).addTo(mapRef.current)
           .bindPopup(`${searchQuery}`)
           .openPopup();
+          setSearchMarker(marker);
       }
+      
     } else {
       alert("No results found.");
     }
@@ -187,9 +232,10 @@ const MapComponent = () => {
         iconAnchor: [22, 38],
         popupAnchor: [-3, -38],
       });
-      L.marker([lat, lon], { icon: customIcon }).addTo(mapRef.current)
+      const marker = L.marker([lat, lon], { icon: customIcon }).addTo(mapRef.current)
         .bindPopup(`${display_name}`)
         .openPopup();
+        setSearchMarker(marker);
     }
     setSuggestions([]);
   };
@@ -216,6 +262,10 @@ const MapComponent = () => {
     setSuggestions([]);
     if (inputRef.current) {
       inputRef.current.value = '';
+    }
+    if(searchMarker) {
+      mapRef.current?.removeLayer(searchMarker);
+      setSearchMarker(null);
     }
   };
 
@@ -278,21 +328,23 @@ const MapComponent = () => {
     window.scrollTo(0, scrollPosition); // フォーム表示前のスクロール位置に戻る
   };
   
-  
-  
-
   const toggleAddMarker = () => {
     setAddingMarker(!addingMarker);
     if (userMarker) {
       mapRef.current?.removeLayer(userMarker);
       setUserMarker(null);
       marker_add_check = false;
+      setFormVisible(false);
     }
     setMarkerPlaced(false);
   };
-  
-  
 
+  const toggleTaskList = () => {
+    setTaskListVisible(!taskListVisible);
+  };
+  
+  
+  
   const handleMapClick = async (e: L.LeafletMouseEvent) => {
     if (addingMarker && mapRef.current) {
       const customIcon = L.icon({
@@ -312,10 +364,6 @@ const MapComponent = () => {
       }
     }
   };
-  
-  
-  
-  
 
   useEffect(() => {
     if (mapRef.current) {
@@ -368,19 +416,67 @@ const MapComponent = () => {
     window.scrollTo(0, scrollPosition); // フォーム表示前のスクロール位置に戻る
   };
 
+  const handleNextPage = () => {
+    setCurrentPage((prevPage) => prevPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    setCurrentPage((prevPage) => prevPage - 1);
+  };
+
+  const jumpTaskLocation = () => {
+    setTaskListVisible(false);
+    if (mapRef.current) {
+      mapRef.current.flyTo([34.52481870513565, 135.45933451229266], 16);
+      const customIcon = L.icon({
+        iconUrl: '/marker-icon.png',
+        iconSize: [38, 38],
+        iconAnchor: [22, 38],
+        popupAnchor: [-3, -38],
+      });
+      const marker = L.marker([34.52481870513565, 135.45933451229266], { icon: customIcon }).addTo(mapRef.current)
+        .bindPopup(`タスク`)
+        .openPopup();
+        setSearchMarker(marker);
+    }
+  }
+  
+
+  const renderTasks = () => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return tasks.slice(startIndex, endIndex).map((task, index) => (
+      <li key={index} className="mb-2 p-2 border-b border-gray-200 flex items-center justify-starta">
+        <Image src={workIcon} alt="Task Marker" className="w-6 h-6 mr-2" />
+        <span>{(task.length >= taskLength) ? `${task.slice(0, taskLength)}...` : task }</span>
+        <button style={{ color: '#243C74' }} className='absolute right-16' onClick={jumpTaskLocation}><IoMdPin /></button>
+        <button style={{ color: '#FC644C' }} className='absolute right-5 '><MdDelete /></button>
+      </li>
+    ));
+  };
+  
+
+  const handleTouchStart = () => {
+    setTimeout(() => {
+      document.body.style.overflow = 'hidden'; // スクロールを無効にする
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollPosition}px`;
+      document.body.style.width = '100%';
+    }, 0);
+  };
+
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
       <form onSubmit={handleSearch} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-11/12 md:w-1/2">
         <div className="flex shadow-lg relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleInputChange}
-            ref={inputRef}
-            className="text-lg w-full p-2 rounded-l-lg mr-0 border-2 text-gray-800 border-indigo-300 bg-white opacity-85"
-            placeholder="マップ検索する"
-            style={{ willChange: 'transform', fontSize: '16px' }}
-          />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={handleInputChange}
+          ref={inputRef}
+          className="text-lg w-full p-2 rounded-l-lg mr-0 border-2 text-gray-800 border-indigo-300 bg-white opacity-85"
+        placeholder="マップ検索する"
+        style={{ fontSize: '16px', willChange: 'auto' }}/>
           {searchQuery && (
             <button
               type="button"
@@ -414,63 +510,62 @@ const MapComponent = () => {
       <div id="map" className="w-full h-full z-10"></div>
       <button
         onClick={moveToCurrentLocation}
-        className="absolute bottom-40 left-1/2 transform -translate-x-1/2 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
+        className="absolute bottom-40 sm:bottom-20 left-1/2 transform -translate-x-1/2 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
       >
         <BiCurrentLocation size={40} />
       </button>
       <button
         onClick={toggleAddMarker}
-        className="absolute bottom-40 right-8 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
+        className="absolute xl:mr-60 bottom-40 sm:bottom-20 right-8 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
       >
       {addingMarker ? <BsX size={40} /> : <FiPlus size={40} />}
       </button>
 
       <button
-        onClick={moveToCurrentLocation}
-        className="absolute bottom-40 left-16 transform -translate-x-1/2 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
-      >
+        onClick={toggleTaskList}
+        className="absolute xl:ml-60 bottom-40 sm:bottom-20 left-16 transform -translate-x-1/2 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20">
         <IoIosList size={40} />
       </button>
+
       {addingMarker && !markerPlaced && (
         <>
         <button
           onClick={shoppingIconClick}
-          className={`absolute bottom-64 right-8 p-3 ${activeIcon === 'shoppingIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          className={`absolute xl:mr-60 bottom-64 right-8 p-3 ${activeIcon === 'shoppingIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
         >
           <Image src={shoppingIcon} alt="shopping Marker" className="w-10 h-10" />
         </button>
         <button
           onClick={foodIconClick}
-          className={`absolute bottom-84 right-8 p-3 ${activeIcon === 'foodIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          className={`absolute xl:mr-60 bottom-84 right-8 p-3 ${activeIcon === 'foodIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
         >
           <Image src={foodIcon} alt="food Marker" className="w-10 h-10" />
         </button>
         <button
           onClick={exerciseIconClick}
-          className={`absolute bottom-104 right-8 p-3 ${activeIcon === 'exerciseIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          className={`absolute xl:mr-60 bottom-104 right-8 p-3 ${activeIcon === 'exerciseIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
         >
           <Image src={exerciseIcon} alt="exercise Marker" className="w-10 h-10" />
         </button>
         <button
           onClick={workIconClick}
-          className={`absolute bottom-124 right-8 p-3 ${activeIcon === 'workIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          className={`absolute xl:mr-60 bottom-124 right-8 p-3 ${activeIcon === 'workIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
         >
           <Image src={workIcon} alt="work Marker" className="w-10 h-10" />
         </button>
         <button
           onClick={map_pinIconClick}
-          className={`absolute bottom-144 right-8 p-3 ${activeIcon === 'map_pinIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          className={`absolute xl:mr-60 bottom-144 right-8 p-3 ${activeIcon === 'map_pinIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
         >
           <Image src={map_pinIcon} alt="map_pin Marker" className="w-10 h-10" />
         </button>
         </>
       )}
       {formVisible && (
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 w-11/12 md:w-1/2 p-4 bg-white bg-opacity-70 shadow-lg rounded-lg z-30">
+        <div className="absolute top-16 md:top-32 left-1/2 transform -translate-x-1/2 w-11/12 xl:w-1/3 md:w-2/3 p-4 bg-white bg-opacity-70 shadow-lg rounded-lg z-30">
           <button
             onClick={closeForm}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-          >
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
             <FaTimes />
           </button>
           <form>
@@ -539,6 +634,45 @@ const MapComponent = () => {
           </form>
         </div>
       )}
+<div
+  id="task-list"
+  className={`fixed inset-y-0 bg-white w-full md:w-1/2 xl:w-1/3 shadow-lg z-30 transform transition-transform duration-300 ease-in-out ${
+    taskListVisible ? 'translate-x-0' : '-translate-x-full'}`}>
+  <button
+    onClick={toggleTaskList}
+    className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-800 focus:outline-none z-40"
+  >
+    <FaTimes size={24} />
+  </button>
+  <div className="p-4">
+    <h2 className="text-2xl font-bold mb-4">Taskリスト</h2>
+    <ul>
+      {renderTasks()}
+    </ul>
+    <div className="flex justify-end mt-4">
+      <button
+        onClick={handlePrevPage}
+        className="absolute left-4 bottom-6 p-2 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none"
+        disabled={currentPage === 0}
+        style={{ display: currentPage === 0 ? 'none' : 'block' }}
+      ><IoArrowBack size={40}/>
+      </button>
+      <button
+        onClick={handleNextPage}
+        className="absolute bottom-6 p-2 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none"
+        disabled={(currentPage + 1) * itemsPerPage >= tasks.length}
+        style={{ display: (currentPage + 1) * itemsPerPage >= tasks.length ? 'none' : 'block' }}
+      ><IoArrowForward size={40}/>
+      </button>
+    </div>
+    <div className="absolute bottom-10 right-1/2 flex justify-center mt-4">
+      <p className="text-lg font-bold text-gray-800">
+        {currentPage + 1}/{Math.ceil(tasks.length / itemsPerPage)}
+      </p>
+    </div>
+  </div>
+</div>
+
     </div>
   );
 };
