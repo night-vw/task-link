@@ -91,7 +91,7 @@ const MapComponent = () => {
     const preventDefault = (e: Event) => e.preventDefault();
   
     if (taskListVisible) {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = 'hidden'; // スクロールを無効にする
       window.removeEventListener('wheel', preventDefault);
       window.removeEventListener('touchmove', preventDefault);
     } else {
@@ -302,16 +302,14 @@ const MapComponent = () => {
   };
   
   const openForm = () => {
+    setScrollPosition(window.scrollY); // フォーム表示前のスクロール位置を保存
     setFormVisible(true);
-    setTimeout(() => {
-      document.body.style.overflow = 'hidden'; // スクロールを無効にする
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollPosition}px`;
-      document.body.style.width = '100%';
-    }, 0);
+    document.body.style.overflow = 'hidden'; // スクロールを無効にする
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollPosition}px`;
+    document.body.style.width = '100%';
   };
   
-
   const closeForm = () => {
     setFormVisible(false);
     setAddingMarker(false);
@@ -325,7 +323,9 @@ const MapComponent = () => {
     document.body.style.top = '';
     document.body.style.width = '';
     window.scrollTo(0, scrollPosition); // フォーム表示前のスクロール位置に戻る
+    document.body.style.overflow = 'hidden'; // スクロールを再度有効にする
   };
+  
   
   const toggleAddMarker = () => {
     setAddingMarker(!addingMarker);
@@ -413,6 +413,7 @@ const MapComponent = () => {
   const handleBlur = () => {
     document.body.style.overflow = 'auto'; // スクロールを再度有効にする
     window.scrollTo(0, scrollPosition); // フォーム表示前のスクロール位置に戻る
+    document.body.style.overflow = 'hidden'; // スクロールを無効にする
   };
 
   const handleNextPage = () => {

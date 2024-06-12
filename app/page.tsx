@@ -1,4 +1,5 @@
-import React from 'react';
+"use client"
+import React, { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 // ローディングコンポーネント
@@ -9,7 +10,6 @@ const Loading = () => (
   </div>
 );
 
-
 const TaskMap = () => {
   const Map = React.useMemo(
     () =>
@@ -19,6 +19,16 @@ const TaskMap = () => {
       }),
     []
   );
+
+  useEffect(() => {
+    // マップが表示される前にスクロールを無効にする
+    document.body.style.overflow = 'hidden';
+
+    // コンポーネントがアンマウントされたときにスクロールを有効に戻す
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   return (
     <div className="text-2xl mt-16 md:mt-0">
