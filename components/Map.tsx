@@ -22,7 +22,6 @@ import shoppingIcon from '@/public/shopping-icon.png';
 const MapComponent = () => {
   const mapRef = useRef<L.Map | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const taskListRef = useRef<HTMLDivElement | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -645,7 +644,9 @@ const MapComponent = () => {
     <FaTimes size={24} />
   </button>
   <div className="p-4">
+    <div className='flex'>
     <h2 className="text-2xl font-bold mb-4">Taskリスト</h2>
+    </div>
     <ul>
       {renderTasks()}
     </ul>
