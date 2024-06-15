@@ -38,36 +38,6 @@ const SideMenu = () => {
     }
   };
 
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     document.addEventListener('mousedown', handleClickOutside);
-  //     document.body.style.overflow = 'hidden';
-  //   } else {
-  //     document.removeEventListener('mousedown', handleClickOutside);
-  //     document.body.style.overflow = 'auto';
-  //   }
-
-  //   return () => {
-  //     document.removeEventListener('mousedown', handleClickOutside);
-  //     document.body.style.overflow = 'auto';
-  //   };
-  // }, [isOpen]);
-
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     if (isOpen) {
-  //       document.body.style.overflow = 'hidden';
-  //     } else {
-  //       document.body.style.overflow = 'hidden';
-  //     }
-  //   };
-
-  //   window.addEventListener('resize', handleResize);
-  //   return () => {
-  //     window.removeEventListener('resize', handleResize);
-  //   };
-  // }, [isOpen]);
-
   const pathname = usePathname() ;
 
   return (

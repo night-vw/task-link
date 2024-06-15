@@ -476,6 +476,7 @@ const MapComponent = () => {
   };
   
   const addTask = () => {
+    setFormVisible(false);
     const isMobile = window.innerWidth <= 768;
     toast(`タスクが追加されました`, {
       position: isMobile ? "top-center" : "bottom-right",
@@ -485,11 +486,9 @@ const MapComponent = () => {
       pauseOnHover: true,
       draggable: true,
       progress: undefined,
-      className: 'text-base', // Tailwind class for smaller text
+      className: 'text-base',
     });
   };
-  
-  
 
   return (
     <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
