@@ -22,7 +22,6 @@ import {
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
 import 'leaflet/dist/leaflet.css';
 import map_pinIcon from '@/public/map_pin-icon.png';
 import workIcon from '@/public/work-icon.png';
@@ -438,14 +437,14 @@ const MapComponent = () => {
   const jumpTaskLocation = () => {
     setTaskListVisible(false);
     if (mapRef.current) {
-      mapRef.current.flyTo([34.52481870513565, 135.45933451229266], 16);
+      mapRef.current.flyTo([34.687257, 135.525855], 16);
       const customIcon = L.icon({
         iconUrl: '/marker-icon.png',
         iconSize: [38, 38],
         iconAnchor: [22, 38],
         popupAnchor: [-3, -38],
       });
-      const marker = L.marker([34.52481870513565, 135.45933451229266], { icon: customIcon }).addTo(mapRef.current)
+      const marker = L.marker([34.687257, 135.525855], { icon: customIcon }).addTo(mapRef.current)
         .bindPopup(`タスク`)
         .openPopup();
         setSearchMarker(marker);
@@ -456,13 +455,20 @@ const MapComponent = () => {
     const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return tasks.slice(startIndex, endIndex).map((task, index) => (
-      <li key={index} className="mb-2 p-2 border-b border-gray-200 flex items-center justify-starta">
+      <li key={index} className="mb-2 p-2 border-b border-gray-200 flex items-center justify-start">
         <Image src={workIcon} alt="Task Marker" className="w-6 h-6 mr-2" />
-        <span>{(task.length >= taskLength) ? `${task.slice(0, taskLength)}...` : task }</span>
+        <button onClick={() => handleTaskClick(index + 1)} className="text-left">
+          <span>{(task.length >= taskLength) ? `${task.slice(0, taskLength)}...` : task }</span>
+        </button>
         <button style={{ color: '#243C74' }} className='absolute right-16' onClick={jumpTaskLocation}><IoMdPin /></button>
         <button style={{ color: '#FC644C' }} className='absolute right-5 '><MdDelete /></button>
       </li>
     ));
+  };
+
+  const handleTaskClick = (taskId:number) => {
+    console.log(`Task ${taskId} clicked`);
+    // ここにボタンがクリックされたときの処理を追加します。
   };
   
 
@@ -676,7 +682,7 @@ const MapComponent = () => {
     <div className='ml-6'>
       <Select>
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="並び替え" />
+          <SelectValue placeholder="追加日" />
         </SelectTrigger>
         <SelectContent>
         <SelectItem value="add_date">追加日</SelectItem>
@@ -718,7 +724,7 @@ const MapComponent = () => {
     <form onSubmit={handleSearch} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-11/12 md:w-1/2">
       {/* 他のコードはそのまま */}
     </form>
-    {/* 他のコードはそのまま */}
+      {/* 他のコードはそのまま */}
   </div>
 );
 
