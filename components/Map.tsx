@@ -19,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 import 'leaflet/dist/leaflet.css';
@@ -449,7 +451,6 @@ const MapComponent = () => {
         setSearchMarker(marker);
     }
   }
-  
 
   const renderTasks = () => {
     const startIndex = currentPage * itemsPerPage;
@@ -473,6 +474,22 @@ const MapComponent = () => {
       document.body.style.width = '100%';
     }, 0);
   };
+  
+  const addTask = () => {
+    const isMobile = window.innerWidth <= 768;
+    toast(`タスクが追加されました`, {
+      position: isMobile ? "top-center" : "bottom-right",
+      autoClose: 5000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      className: 'text-base', // Tailwind class for smaller text
+    });
+  };
+  
+  
 
   return (
     <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
@@ -570,79 +587,80 @@ const MapComponent = () => {
         </button>
         </>
       )}
-      {formVisible && (
-        <div className="absolute top-16 md:top-32 left-1/2 transform -translate-x-1/2 w-11/12 xl:w-1/3 md:w-2/3 p-4 bg-white bg-opacity-70 shadow-lg rounded-lg z-30">
-          <button
-            onClick={closeForm}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
-            <FaTimes />
-          </button>
-          <form>
-            <div className="mb-3">
-              <label className="block text-gray-700 text-sm font-bold mb-1">タスク名 (30文字)</label>
-              <input type="text" maxLength={30} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} />
-            </div>
-            <div className="mb-3">
-              <label className="block text-gray-700 text-sm font-bold mb-1">詳細/説明 (200文字)</label>
-              <textarea
-                maxLength={200}
-                className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm"
-                style={{ fontSize: '16px' }}
-                onBlur={handleBlur}/>
-
-            </div>
-            <label className="block text-gray-700 text-sm font-bold mb-1">期限あり / なし</label>
-            <div className='flex mb-3'>
-              <div className='mr-6'>
-                <label className='text-sm font-bold'>
-                  <input
-                    type="radio"
-                    value="on"
-                    checked={selectedOption === 'on'}
-                    onChange={handleOptionChange}
-                  />
-                  あり
-                </label>
-              </div>
-              <div>
-                <label className='text-sm font-bold'>
-                  <input
-                    type="radio"
-                    value="off"
-                    checked={selectedOption === 'off'}
-                    onChange={handleOptionChange}
-                  />
-                  なし
-                </label>
-              </div>
-            </div>
-            {!isDisabled &&
-              <div className="mb-3">
-                <label className="block text-gray-700 text-sm font-bold mb-1">期限</label>
-                <input type="datetime-local" value={currentDateTime} className="p-1.5 w-full rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} disabled={isDisabled} />
-              </div>
-            }
-            <div className="mb-3">
-              <label className="block text-gray-700 text-sm font-bold mb-1">優先度</label>
-              <select className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }}>
-                <option value="high">高</option>
-                <option value="medium">中</option>
-                <option value="low">低</option>
-              </select>
-            </div>
-            <div className="mb-3">
-              <label className="block text-gray-700 text-sm font-bold mb-1">場所の詳細 (50文字)</label>
-              <textarea
-                maxLength={50}
-                className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm"
-                style={{ fontSize: '16px' }}
-                onBlur={handleBlur}
-              ></textarea>
-            </div>
-            <button type="submit" className="w-full p-1.5 bg-indigo-500 text-white rounded-lg hover:opacity-90 text-sm">タスクを保存する</button>
-          </form>
+{formVisible && (
+  <div className="absolute top-16 md:top-32 left-1/2 transform -translate-x-1/2 w-11/12 xl:w-1/3 md:w-2/3 p-4 bg-white bg-opacity-70 shadow-lg rounded-lg z-30">
+    <button
+      onClick={closeForm}
+      className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+      <FaTimes />
+    </button>
+    <form onSubmit={(e) => e.preventDefault()}>
+      <div className="mb-3">
+        <label className="block text-gray-700 text-sm font-bold mb-1">タスク名 (30文字)</label>
+        <input type="text" maxLength={30} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} />
+      </div>
+      <div className="mb-3">
+        <label className="block text-gray-700 text-sm font-bold mb-1">詳細/説明 (200文字)</label>
+        <textarea
+          maxLength={200}
+          className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm"
+          style={{ fontSize: '16px' }}
+          onBlur={handleBlur}
+        />
+      </div>
+      <label className="block text-gray-700 text-sm font-bold mb-1">期限あり / なし</label>
+      <div className='flex mb-3'>
+        <div className='mr-6'>
+          <label className='text-sm font-bold'>
+            <input
+              type="radio"
+              value="on"
+              checked={selectedOption === 'on'}
+              onChange={handleOptionChange}
+            />
+            あり
+          </label>
         </div>
-      )}
+        <div>
+          <label className='text-sm font-bold'>
+            <input
+              type="radio"
+              value="off"
+              checked={selectedOption === 'off'}
+              onChange={handleOptionChange}
+            />
+            なし
+          </label>
+        </div>
+      </div>
+      {!isDisabled &&
+        <div className="mb-3">
+          <label className="block text-gray-700 text-sm font-bold mb-1">期限</label>
+          <input type="datetime-local" value={currentDateTime} className="p-1.5 w-full rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} disabled={isDisabled} />
+        </div>
+      }
+      <div className="mb-3">
+        <label className="block text-gray-700 text-sm font-bold mb-1">優先度</label>
+        <select className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }}>
+          <option value="high">高</option>
+          <option value="medium">中</option>
+          <option value="low">低</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <label className="block text-gray-700 text-sm font-bold mb-1">場所の詳細 (50文字)</label>
+        <textarea
+          maxLength={50}
+          className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm"
+          style={{ fontSize: '16px' }}
+          onBlur={handleBlur}
+        ></textarea>
+      </div>
+      <button onClick={addTask} type="submit" className="w-full p-1.5 bg-indigo-500 text-white rounded-lg hover:opacity-90 text-sm">タスクを保存する</button>
+    </form>
+  </div>
+)}
+
 <div
   id="task-list"
   className={`fixed inset-y-0 bg-white w-full md:w-1/2 xl:w-1/3 shadow-lg z-30 transform transition-transform duration-300 ease-in-out ${
@@ -694,7 +712,16 @@ const MapComponent = () => {
       </p>
     </div>
   </div>
-</div>
+  </div>
+  return (
+  <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
+    <ToastContainer />
+    <form onSubmit={handleSearch} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-11/12 md:w-1/2">
+      {/* 他のコードはそのまま */}
+    </form>
+    {/* 他のコードはそのまま */}
+  </div>
+);
 
     </div>
   );
