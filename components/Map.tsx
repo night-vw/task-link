@@ -12,6 +12,15 @@ import { IoArrowBack } from "react-icons/io5";
 import { IoArrowForward } from "react-icons/io5";
 import { MdDelete } from "react-icons/md";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+
 import 'leaflet/dist/leaflet.css';
 import map_pinIcon from '@/public/map_pin-icon.png';
 import workIcon from '@/public/work-icon.png';
@@ -647,6 +656,18 @@ const MapComponent = () => {
   <div className="p-4">
     <div className='flex'>
     <h2 className="text-2xl font-bold mb-4">Taskリスト</h2>
+    <div className='ml-6'>
+      <Select>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="並び替え" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="add_date">追加日</SelectItem>
+          <SelectItem value="high_priority">優先度 高</SelectItem>
+          <SelectItem value="near_deadline">期限 近</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
     </div>
     <ul>
       {renderTasks()}
