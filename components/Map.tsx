@@ -715,7 +715,7 @@ const MapComponent = () => {
     <h2 className="text-2xl font-bold mb-4">Taskリスト</h2>
     <div className='ml-6'>
       <Select>
-        <SelectTrigger className="w-[100px]">
+        <SelectTrigger className="w-[120px]">
           <SelectValue placeholder="追加日"/>
         </SelectTrigger>
         <SelectContent>

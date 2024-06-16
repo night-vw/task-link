@@ -18,8 +18,12 @@ import {
 import logoImage from "@/components/image/task-link_logo.png";
 import { usePathname } from 'next/navigation';
 import LogoutButton from './auth_components/LogoutButton';
+import Router from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const SideMenu = () => {
+  const router = useRouter() ;
+
   const [isOpen, setIsOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -37,6 +41,9 @@ const SideMenu = () => {
       setIsOpen(false);
     }
   };
+  const editProfile = async () => {
+    await router.push("/profile") ;
+  }
 
   const pathname = usePathname() ;
 
@@ -70,7 +77,7 @@ const SideMenu = () => {
                 <DropdownMenuContent>
                   <DropdownMenuLabel>アカウント</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>プロフィール</DropdownMenuItem>
+                  <DropdownMenuItem onClick={editProfile}>プロフィール</DropdownMenuItem>
                   <DropdownMenuItem>設定</DropdownMenuItem>
                   <LogoutButton/>
                 </DropdownMenuContent>
