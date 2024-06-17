@@ -18,8 +18,12 @@ import {
 import logoImage from "@/components/image/task-link_logo.png";
 import { usePathname } from 'next/navigation';
 import LogoutButton from './auth_components/LogoutButton';
+import Router from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const SideMenu = () => {
+  const router = useRouter() ;
+
   const [isOpen, setIsOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -37,36 +41,9 @@ const SideMenu = () => {
       setIsOpen(false);
     }
   };
-
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     document.addEventListener('mousedown', handleClickOutside);
-  //     document.body.style.overflow = 'hidden';
-  //   } else {
-  //     document.removeEventListener('mousedown', handleClickOutside);
-  //     document.body.style.overflow = 'auto';
-  //   }
-
-  //   return () => {
-  //     document.removeEventListener('mousedown', handleClickOutside);
-  //     document.body.style.overflow = 'auto';
-  //   };
-  // }, [isOpen]);
-
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     if (isOpen) {
-  //       document.body.style.overflow = 'hidden';
-  //     } else {
-  //       document.body.style.overflow = 'hidden';
-  //     }
-  //   };
-
-  //   window.addEventListener('resize', handleResize);
-  //   return () => {
-  //     window.removeEventListener('resize', handleResize);
-  //   };
-  // }, [isOpen]);
+  const editProfile = async () => {
+    await router.push("/profile") ;
+  }
 
   const pathname = usePathname() ;
 
@@ -100,7 +77,7 @@ const SideMenu = () => {
                 <DropdownMenuContent>
                   <DropdownMenuLabel>アカウント</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>プロフィール</DropdownMenuItem>
+                  <DropdownMenuItem onClick={editProfile}>プロフィール</DropdownMenuItem>
                   <DropdownMenuItem>設定</DropdownMenuItem>
                   <LogoutButton/>
                 </DropdownMenuContent>
