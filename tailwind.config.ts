@@ -79,6 +79,9 @@ const config = {
         '124': '31rem',
         '144':'36rem',
       },
+      margin: {
+        '120':'28rem',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
