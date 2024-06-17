@@ -7,7 +7,7 @@ import { FaSearch, FaTimes } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { BiCurrentLocation } from "react-icons/bi";
 import { BsX } from "react-icons/bs";
-import { IoIosList,IoMdPin  } from "react-icons/io";
+import { IoIosList, IoMdPin } from "react-icons/io";
 import { IoArrowBack } from "react-icons/io5";
 import { IoArrowForward } from "react-icons/io5";
 import { MdDelete } from "react-icons/md";
@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/select"
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
 import 'leaflet/dist/leaflet.css';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
 import map_pinIcon from '@/public/map_pin-icon.png';
 import workIcon from '@/public/work-icon.png';
 import exerciseIcon from '@/public/exercise-icon.png';
@@ -30,6 +31,7 @@ import foodIcon from '@/public/food-icon.png';
 import shoppingIcon from '@/public/shopping-icon.png';
 
 const MapComponent = () => {
+  const supabase = createClientComponentClient();
   const mapRef = useRef<L.Map | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,10 +52,24 @@ const MapComponent = () => {
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [selectedOption, setSelectedOption] = useState('on');
   const [isDisabled, setIsDisabled] = useState(false);
-  const [taskLength,setTaskLength] = useState(20);
-  const [taskUpdate,setTaskUpdate] = useState(false);
+  const [taskLength, setTaskLength] = useState(20);
+  const [taskUpdate, setTaskUpdate] = useState(false);
+  const [priority, setPriority] = useState('高');
 
   const tasks = Array.from({ length: 50 }, (_, index) => `タスク${index + 1}`);
+
+  interface TaskData {
+    taskName: string;
+    taskDescription: string;
+    deadlineBool: boolean;
+    deadlineDate: string | null;
+    priority: string;
+    placeDescription: string;
+    userId: string | null;
+    latitude: number;
+    longitude: number;
+    markerUrl: string;
+  }
 
   useEffect(() => {
     const now = new Date();
@@ -63,7 +79,7 @@ const MapComponent = () => {
     const day = String(jstTime.getDate()).padStart(2, '0');
     const hours = String(jstTime.getHours()).padStart(2, '0');
     const minutes = String(jstTime.getMinutes()).padStart(2, '0');
-    
+
     const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
     setCurrentDateTime(formattedDateTime);
     console.log(formattedDateTime)
@@ -73,19 +89,19 @@ const MapComponent = () => {
     function handleResize() {
       const windowHeight = window.innerHeight;
       const windowWeight = window.innerWidth;
-      let newItemsPerPage = 12 ;
+      let newItemsPerPage = 12;
       if (windowHeight < 700) {
-        newItemsPerPage = 9 ;
-      }else if (windowHeight < 900) {
-        newItemsPerPage = 10 ;
+        newItemsPerPage = 9;
+      } else if (windowHeight < 900) {
+        newItemsPerPage = 10;
       }
 
-      let newTaskLength = 15 ; 
+      let newTaskLength = 15;
       if (windowWeight < 400) {
         newTaskLength = 8;
-      }else if (windowWeight < 500) {
-        newTaskLength = 10 ;
-      }else if (windowWeight < 1100) {
+      } else if (windowWeight < 500) {
+        newTaskLength = 10;
+      } else if (windowWeight < 1100) {
         newTaskLength = 12;
       }
 
@@ -100,7 +116,7 @@ const MapComponent = () => {
 
   useEffect(() => {
     const preventDefault = (e: Event) => e.preventDefault();
-  
+
     if (taskListVisible) {
       document.body.style.overflow = 'hidden'; // スクロールを無効にする
       window.removeEventListener('wheel', preventDefault);
@@ -110,14 +126,14 @@ const MapComponent = () => {
       window.addEventListener('wheel', preventDefault, { passive: false });
       window.addEventListener('touchmove', preventDefault, { passive: false });
     }
-  
+
     return () => {
       window.removeEventListener('wheel', preventDefault);
       window.removeEventListener('touchmove', preventDefault);
     };
   }, [taskListVisible]);
-  
-  
+
+
   useEffect(() => {
     const preventDefault = (e: Event) => e.preventDefault();
     window.addEventListener('wheel', preventDefault, { passive: false });
@@ -160,7 +176,7 @@ const MapComponent = () => {
 
         if (mapRef.current) {
           mapRef.current.setView([latitude, longitude], 16);
-        
+
           const currentLocationMarker = L.circleMarker([latitude, longitude], {
             color: '#FFFFFF',
             fillColor: '#0476D9',
@@ -168,8 +184,8 @@ const MapComponent = () => {
             fillOpacity: 1,
             weight: 5
           }).addTo(mapRef.current)
-        }        
-        
+        }
+
       };
 
       const error = () => {
@@ -214,9 +230,9 @@ const MapComponent = () => {
         const marker = L.marker([lat, lon], { icon: customIcon }).addTo(mapRef.current)
           .bindPopup(`${searchQuery}`)
           .openPopup();
-          setSearchMarker(marker);
+        setSearchMarker(marker);
       }
-      
+
     } else {
       alert("No results found.");
     }
@@ -245,7 +261,7 @@ const MapComponent = () => {
       const marker = L.marker([lat, lon], { icon: customIcon }).addTo(mapRef.current)
         .bindPopup(`${display_name}`)
         .openPopup();
-        setSearchMarker(marker);
+      setSearchMarker(marker);
     }
     setSuggestions([]);
   };
@@ -273,7 +289,7 @@ const MapComponent = () => {
     if (inputRef.current) {
       inputRef.current.value = '';
     }
-    if(searchMarker) {
+    if (searchMarker) {
       mapRef.current?.removeLayer(searchMarker);
       setSearchMarker(null);
     }
@@ -289,12 +305,12 @@ const MapComponent = () => {
             const mapBounds = mapRef.current.getBounds();
             const mapCenter = mapRef.current.getCenter();
             const mapCenterLatLng = latLng(mapCenter.lat, mapCenter.lng);
-  
+
             const distance = mapCenterLatLng.distanceTo(latLng(latitude, longitude));
             const zoomLevel = mapRef.current.getZoom();
-  
+
             const distanceThreshold = 500;
-  
+
             if (mapBounds.contains(currentLocation) && distance < distanceThreshold) {
               mapRef.current.flyTo(currentLocation, zoomLevel);
             } else {
@@ -311,7 +327,7 @@ const MapComponent = () => {
       alert("Geolocation is not supported by this browser.");
     }
   };
-  
+
   const openForm = () => {
     setScrollPosition(window.scrollY); // フォーム表示前のスクロール位置を保存
     setFormVisible(true);
@@ -320,7 +336,7 @@ const MapComponent = () => {
     document.body.style.top = `-${scrollPosition}px`;
     document.body.style.width = '100%';
   };
-  
+
   const closeForm = () => {
     setFormVisible(false);
     setAddingMarker(false);
@@ -336,8 +352,8 @@ const MapComponent = () => {
     window.scrollTo(0, scrollPosition); // フォーム表示前のスクロール位置に戻る
     document.body.style.overflow = 'hidden'; // スクロールを再度有効にする
   };
-  
-  
+
+
   const toggleAddMarker = () => {
     setAddingMarker(!addingMarker);
     if (userMarker) {
@@ -352,9 +368,9 @@ const MapComponent = () => {
   const toggleTaskList = () => {
     setTaskListVisible(!taskListVisible);
   };
-  
-  
-  
+
+
+
   const handleMapClick = async (e: L.LeafletMouseEvent) => {
     if (addingMarker && mapRef.current) {
       const customIcon = L.icon({
@@ -363,7 +379,7 @@ const MapComponent = () => {
         iconAnchor: [22, 38],
         popupAnchor: [-3, -38],
       });
-  
+
       if (!marker_add_check) {
         const marker = L.marker(e.latlng, { icon: customIcon }).addTo(mapRef.current);
         setUserMarker(marker);
@@ -386,36 +402,36 @@ const MapComponent = () => {
     };
   }, [addingMarker, markerUrl]);
 
-  const map_pinIconClick = ()=>{
+  const map_pinIconClick = () => {
     setMarkerUrl('/map_pin-icon.png');
     setActiveIcon('map_pinIcon');
   }
 
-  const workIconClick = ()=>{
+  const workIconClick = () => {
     setMarkerUrl('/work-icon.png');
     setActiveIcon('workIcon');
   }
 
-  const exerciseIconClick = ()=>{
+  const exerciseIconClick = () => {
     setMarkerUrl('/exercise-icon.png');
     setActiveIcon('exerciseIcon');
   }
 
-  const foodIconClick = ()=>{
+  const foodIconClick = () => {
     setMarkerUrl('/food-icon.png');
     setActiveIcon('foodIcon');
   }
 
-  const shoppingIconClick = ()=>{
+  const shoppingIconClick = () => {
     setMarkerUrl('/shopping-icon.png');
     setActiveIcon('shoppingIcon');
   }
 
   const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if(isDisabled === true) {
-      setIsDisabled(false) ;
-    }else {
-      setIsDisabled(true) ;
+    if (isDisabled === true) {
+      setIsDisabled(false);
+    } else {
+      setIsDisabled(true);
     }
     setSelectedOption(e.target.value);
     console.log(isDisabled);
@@ -448,7 +464,7 @@ const MapComponent = () => {
       const marker = L.marker([34.687257, 135.525855], { icon: customIcon }).addTo(mapRef.current)
         .bindPopup(`タスク`)
         .openPopup();
-        setSearchMarker(marker);
+      setSearchMarker(marker);
     }
   }
 
@@ -459,14 +475,14 @@ const MapComponent = () => {
       <li key={index} className="mb-2 p-2 border-b border-gray-200 flex items-center justify-start">
         <Image src={workIcon} alt="Task Marker" className="w-6 h-6 mr-2" />
         <button onClick={changeTaskUpdate} className="text-left">
-          <span>{(task.length >= taskLength) ? `${task.slice(0, taskLength)}...` : task }</span>
+          <span>{(task.length >= taskLength) ? `${task.slice(0, taskLength)}...` : task}</span>
         </button>
         <button style={{ color: '#243C74' }} className='absolute right-16' onClick={jumpTaskLocation}><IoMdPin /></button>
         <button style={{ color: '#FC644C' }} className='absolute right-5 '><MdDelete /></button>
       </li>
     ));
   };
-  
+
 
   const handleTouchStart = () => {
     setTimeout(() => {
@@ -476,46 +492,25 @@ const MapComponent = () => {
       document.body.style.width = '100%';
     }, 0);
   };
-  
-  const addTask = () => {
-    setFormVisible(false);
-    const isMobile = window.innerWidth <= 768;
-    
-    toast(
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        タスクが追加されました
-        <Image src={map_pinIcon} alt="Task Added" style={{ width: '24px', height: '24px', marginLeft: '10px' }} />
-      </div>, 
-      {
-        position: isMobile ? "top-center" : "bottom-right",
-        autoClose: 5000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        className: 'text-base font-black',
-      }
-    );
-  };
+
 
   const changeTaskUpdate = () => {
-    if(taskUpdate) {
-      setTaskUpdate(false) ;
-    }else {
-      setTaskUpdate(true);  
+    if (taskUpdate) {
+      setTaskUpdate(false);
+    } else {
+      setTaskUpdate(true);
     }
   }
 
   const updateTask = () => {
     setTaskUpdate(false);
     const isMobile = window.innerWidth <= 768;
-    
+
     toast(
       <div style={{ display: 'flex', alignItems: 'center' }}>
         タスクが変更されました
         <Image src={map_pinIcon} alt="Task Added" style={{ width: '24px', height: '24px', marginLeft: '10px' }} />
-      </div>, 
+      </div>,
       {
         position: isMobile ? "top-center" : "bottom-right",
         autoClose: 5000,
@@ -529,18 +524,152 @@ const MapComponent = () => {
     );
   }
 
+  const addTaskToSupabase = async (taskData: TaskData) => {
+    const { taskName, taskDescription, deadlineBool, deadlineDate, priority, placeDescription, userId, latitude, longitude, markerUrl } = taskData;
+
+    try {
+      const { data, error } = await supabase
+        .from('map_task')
+        .insert([
+          {
+            task_name: taskName,
+            task_description: taskDescription,
+            deadline_bool: deadlineBool,
+            deadline_date: deadlineBool ? deadlineDate : null,
+            priority: priority,
+            place_description: placeDescription,
+            user_id: userId,
+            latitude: latitude,
+            longitude: longitude,
+            category: markerUrl
+          }
+        ]);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('タスクが追加されました', {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        className: 'text-base font-black',
+      });
+
+      fetchTasks(); // タスク追加後にタスク一覧を再取得してマーカーを表示
+    } catch (error) {
+      console.error('Error adding task:', error);
+      toast.error('タスクの追加に失敗しました', {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        className: 'text-base font-black',
+      });
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const taskName = (e.target as any).elements.taskName.value;
+    const taskDescription = (e.target as any).elements.taskDescription.value;
+    const deadlineBool = selectedOption === 'on';
+    const deadlineDate = deadlineBool ? (e.target as any).elements.deadlineDate.value : null;
+    const priority = (e.target as any).elements.priority.value;
+    const placeDescription = (e.target as any).elements.placeDescription.value;
+
+    const userResponse = await supabase.auth.getUser();
+    const userId = userResponse.data?.user?.id || null;
+
+    const markerPosition = userMarker?.getLatLng();
+    if (!markerPosition) {
+      toast.error('マーカーの位置を設定してください。', {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        className: 'text-base font-black',
+      });
+      return;
+    }
+    const { lat, lng } = markerPosition;
+
+    const taskData: TaskData = {
+      taskName,
+      taskDescription,
+      deadlineBool,
+      deadlineDate,
+      priority,
+      placeDescription,
+      userId,
+      latitude: lat,
+      longitude: lng,
+      markerUrl
+    };
+
+    await addTaskToSupabase(taskData);
+    closeForm();
+  };
+
+  const fetchTasks = async () => {
+    const userResponse = await supabase.auth.getUser();
+    const userId = userResponse.data?.user?.id || null;
+  
+    const { data, error } = await supabase
+      .from('map_task')
+      .select('*')
+      .eq('user_id', userId);
+  
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      return;
+    }
+  
+    if (mapRef.current !== null) {
+      data.forEach(task => {
+        const customIcon = L.icon({
+          iconUrl: task.category,
+          iconSize: [60, 60],
+          iconAnchor: [22, 38],
+          popupAnchor: [-3, -38],
+        });
+  
+        const marker = L.marker([task.latitude, task.longitude], { icon: customIcon })
+          .addTo(mapRef.current as L.Map)
+          .bindPopup(`<b>${task.task_name}</b><br>${task.task_description}`);
+      });
+    }
+  };
+  
+  
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
   return (
     <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
       <form onSubmit={handleSearch} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-11/12 md:w-1/2">
         <div className="flex shadow-lg relative">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={handleInputChange}
-          ref={inputRef}
-          className="text-lg w-full p-2 rounded-l-lg mr-0 border-2 text-gray-800 border-indigo-300 bg-white opacity-85"
-        placeholder="マップ検索する"
-        style={{ fontSize: '16px', willChange: 'auto' }}/>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={handleInputChange}
+            ref={inputRef}
+            className="text-lg w-full p-2 rounded-l-lg mr-0 border-2 text-gray-800 border-indigo-300 bg-white opacity-85"
+            placeholder="マップ検索する"
+            style={{ fontSize: '16px', willChange: 'auto' }} />
           {searchQuery && (
             <button
               type="button"
@@ -582,7 +711,7 @@ const MapComponent = () => {
         onClick={toggleAddMarker}
         className="absolute xl:mr-60 bottom-40 sm:bottom-20 right-8 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
       >
-      {addingMarker ? <BsX size={40} /> : <FiPlus size={40} />}
+        {addingMarker ? <BsX size={40} /> : <FiPlus size={40} />}
       </button>
 
       <button
@@ -593,36 +722,36 @@ const MapComponent = () => {
 
       {addingMarker && !markerPlaced && (
         <>
-        <button
-          onClick={shoppingIconClick}
-          className={`absolute xl:mr-60 bottom-64 right-8 p-3 ${activeIcon === 'shoppingIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
-        >
-          <Image src={shoppingIcon} alt="shopping Marker" className="w-10 h-10" />
-        </button>
-        <button
-          onClick={foodIconClick}
-          className={`absolute xl:mr-60 bottom-84 right-8 p-3 ${activeIcon === 'foodIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
-        >
-          <Image src={foodIcon} alt="food Marker" className="w-10 h-10" />
-        </button>
-        <button
-          onClick={exerciseIconClick}
-          className={`absolute xl:mr-60 bottom-104 right-8 p-3 ${activeIcon === 'exerciseIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
-        >
-          <Image src={exerciseIcon} alt="exercise Marker" className="w-10 h-10" />
-        </button>
-        <button
-          onClick={workIconClick}
-          className={`absolute xl:mr-60 bottom-124 right-8 p-3 ${activeIcon === 'workIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
-        >
-          <Image src={workIcon} alt="work Marker" className="w-10 h-10" />
-        </button>
-        <button
-          onClick={map_pinIconClick}
-          className={`absolute xl:mr-60 bottom-144 right-8 p-3 ${activeIcon === 'map_pinIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
-        >
-          <Image src={map_pinIcon} alt="map_pin Marker" className="w-10 h-10" />
-        </button>
+          <button
+            onClick={shoppingIconClick}
+            className={`absolute xl:mr-60 bottom-64 right-8 p-3 ${activeIcon === 'shoppingIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          >
+            <Image src={shoppingIcon} alt="shopping Marker" className="w-10 h-10" />
+          </button>
+          <button
+            onClick={foodIconClick}
+            className={`absolute xl:mr-60 bottom-84 right-8 p-3 ${activeIcon === 'foodIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          >
+            <Image src={foodIcon} alt="food Marker" className="w-10 h-10" />
+          </button>
+          <button
+            onClick={exerciseIconClick}
+            className={`absolute xl:mr-60 bottom-104 right-8 p-3 ${activeIcon === 'exerciseIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          >
+            <Image src={exerciseIcon} alt="exercise Marker" className="w-10 h-10" />
+          </button>
+          <button
+            onClick={workIconClick}
+            className={`absolute xl:mr-60 bottom-124 right-8 p-3 ${activeIcon === 'workIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          >
+            <Image src={workIcon} alt="work Marker" className="w-10 h-10" />
+          </button>
+          <button
+            onClick={map_pinIconClick}
+            className={`absolute xl:mr-60 bottom-144 right-8 p-3 ${activeIcon === 'map_pinIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+          >
+            <Image src={map_pinIcon} alt="map_pin Marker" className="w-10 h-10" />
+          </button>
         </>
       )}
 {formVisible && (
@@ -632,21 +761,36 @@ const MapComponent = () => {
       className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
       <FaTimes />
     </button>
-    <form onSubmit={(e) => e.preventDefault()}>
+    <form onSubmit={handleFormSubmit}>
       <div className="mb-3">
-        <label className="block text-gray-700 text-sm font-bold mb-1">タスク名 (30文字)</label>
-        <input type="text" maxLength={30} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} />
+        <label className="block text-gray-700 text-sm font-bold mb-1">
+          タスク名 (30文字)
+          <span className='text-red-500 text-xs ml-4'>＊入力必須</span>
+        </label>
+        <input
+          name="taskName"
+          type="text"
+          maxLength={30}
+          required
+          className="w-full p-1.5 border rounded-lg border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          style={{ fontSize: '16px' }}
+        />
       </div>
       <div className="mb-3">
-        <label className="block text-gray-700 text-sm font-bold mb-1">詳細/説明 (200文字)</label>
+        <label className="block text-gray-700 text-sm font-bold mb-1">
+          詳細/説明 (200文字)
+        </label>
         <textarea
+          name="taskDescription"
           maxLength={200}
-          className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm"
+          className="w-full p-1.5 border rounded-lg border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           style={{ fontSize: '16px' }}
           onBlur={handleBlur}
         />
       </div>
-      <label className="block text-gray-700 text-sm font-bold mb-1">期限あり / なし</label>
+      <label className="block text-gray-700 text-sm mb-1 font-bold">
+        期限あり / なし
+      </label>
       <div className='flex mb-3'>
         <div className='mr-6'>
           <label className='text-sm font-bold'>
@@ -671,155 +815,183 @@ const MapComponent = () => {
           </label>
         </div>
       </div>
-      {!isDisabled &&
+      {!isDisabled && (
         <div className="mb-3">
-          <label className="block text-gray-700 text-sm font-bold mb-1">期限</label>
-          <input type="datetime-local" value={currentDateTime} className="p-1.5 w-full rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} disabled={isDisabled} />
+          <label className="block text-gray-700 text-sm font-bold mb-1">
+            期限
+          </label>
+          <input
+            name="deadlineDate"
+            type="datetime-local"
+            value={currentDateTime}
+            onChange={(e) => setCurrentDateTime(e.target.value)}
+            className="p-1.5 w-full rounded-lg border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            style={{ fontSize: '16px' }}
+            disabled={isDisabled}
+          />
         </div>
-      }
+      )}
       <div className="mb-3">
-        <label className="block text-gray-700 text-sm font-bold mb-1">優先度</label>
-        <select className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }}>
-          <option value="high">高</option>
-          <option value="medium">中</option>
-          <option value="low">低</option>
+        <label className="block text-gray-700 text-sm font-bold mb-1">
+          優先度
+        </label>
+        <select
+          name="priority"
+          className="w-full p-1.5 border rounded-lg border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          style={{ fontSize: '16px' }}
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+        >
+          <option value="高">高</option>
+          <option value="中">中</option>
+          <option value="低">低</option>
         </select>
       </div>
       <div className="mb-3">
-        <label className="block text-gray-700 text-sm font-bold mb-1">場所の詳細 (50文字)</label>
+        <label className="block text-gray-700 text-sm font-bold mb-1">
+          場所の詳細 (50文字)
+        </label>
         <textarea
+          name="placeDescription"
           maxLength={50}
-          className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm"
+          className="w-full p-1.5 border rounded-lg border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           style={{ fontSize: '16px' }}
           onBlur={handleBlur}
         ></textarea>
       </div>
-      <button onClick={addTask} type="submit" className="w-full p-1.5 bg-indigo-500 text-white rounded-lg hover:opacity-90 text-sm">タスクを追加</button>
+      <button
+        type="submit"
+        className="w-full p-1.5 bg-indigo-500 text-white rounded-lg hover:opacity-90 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      >
+        タスクを追加
+      </button>
     </form>
   </div>
 )}
 
-<div
-  id="task-list"
-  className={`fixed inset-y-0 bg-white w-full md:w-1/2 xl:w-1/3 shadow-lg z-30 transform transition-transform duration-300 ease-in-out ${
-    taskListVisible ? 'translate-x-0' : '-translate-x-full'}`}>
-  <button
-    onClick={toggleTaskList}
-    className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-800 focus:outline-none z-40"
-  >
-    <FaTimes size={24} />
-  </button>
-  {!taskUpdate ?(
-  <div className="p-4">
-    <div className='flex'>
-    <h2 className="text-2xl font-bold mb-4">Taskリスト</h2>
-    <div className='ml-6'>
-      <Select>
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="追加日"/>
-        </SelectTrigger>
-        <SelectContent>
-        <SelectItem value="add_date">追加日</SelectItem>
-          <SelectItem value="high_priority">優先度 高</SelectItem>
-          <SelectItem value="near_deadline">期限 近</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-    </div>
-    <ul>
-      {renderTasks()}
-    </ul>
-    <div className="flex justify-end mt-4">
-      <button
-        onClick={handlePrevPage}
-        className="absolute left-4 bottom-6 p-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none"
-        disabled={currentPage === 0}
-        style={{ display: currentPage === 0 ? 'none' : 'block' }}
-      ><IoArrowBack size={40}/>
-      </button>
-      <button
-        onClick={handleNextPage}
-        className="absolute bottom-6 p-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none"
-        disabled={(currentPage + 1) * itemsPerPage >= tasks.length}
-        style={{ display: (currentPage + 1) * itemsPerPage >= tasks.length ? 'none' : 'block' }}
-      ><IoArrowForward size={40}/>
-      </button>
-    </div>
-    <div className="absolute bottom-10 right-1/2 flex justify-center mt-4">
-      <p className="text-lg font-bold text-gray-800">
-        {currentPage + 1}/{Math.ceil(tasks.length / itemsPerPage)}
-      </p>
-    </div>
-  </div>) :
-  (
-<div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-11/12 xl:w-3/4 md:w-3/4 lg:w-2/3 p-4 bg-white bg-opacity-70 rounded-lg z-30">
-  <div className='flex items-center justify-between'>
-      <button onClick={changeTaskUpdate}className='mr-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none'>
-        <IoArrowBack size={40}/>
-      </button>
-      <div className='flex-grow text-center font-bold'>
-      タスク編集
-      </div>
-    <div className='w-10'></div>
-  </div>
 
-    <form onSubmit={(e) => e.preventDefault()} className='mt-10 md:mt-20'>
-        <div className="mb-3">
-            <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">タスク名 (30文字)</label>
-            <input type="text" maxLength={30} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} />
-        </div>
-        <div className="mb-3">
-            <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">詳細/説明 (200文字)</label>
-            <textarea maxLength={200} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} onBlur={handleBlur} />
-        </div>
-        <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">期限あり / なし</label>
-        <div className='flex mb-3'>
-            <div className='mr-6'>
-                <label className='text-sm font-bold md:text-lg'>
-                    <input type="radio" value="on" checked={selectedOption === 'on'} onChange={handleOptionChange} />
-                    あり
-                </label>
+      <div
+        id="task-list"
+        className={`fixed inset-y-0 bg-white w-full md:w-1/2 xl:w-1/3 shadow-lg z-30 transform transition-transform duration-300 ease-in-out ${taskListVisible ? 'translate-x-0' : '-translate-x-full'}`}>
+        <button
+          onClick={toggleTaskList}
+          className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-800 focus:outline-none z-40"
+        >
+          <FaTimes size={24} />
+        </button>
+        {!taskUpdate ? (
+          <div className="p-4">
+            <div className='flex'>
+              <h2 className="text-2xl font-bold mb-4">Taskリスト</h2>
+              <div className='ml-6'>
+                <Select>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="追加日" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="add_date">追加日</SelectItem>
+                    <SelectItem value="high_priority">優先度 高</SelectItem>
+                    <SelectItem value="near_deadline">期限 近</SelectItem>
+                    <SelectItem value="near_deadline">期限切れ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-                <label className='text-sm font-bold md:text-lg'>
-                    <input type="radio" value="off" checked={selectedOption === 'off'} onChange={handleOptionChange} />
-                    なし
-                </label>
+            <ul>
+              {renderTasks()}
+            </ul>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handlePrevPage}
+                className="absolute left-4 bottom-6 p-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none"
+                disabled={currentPage === 0}
+                style={{ display: currentPage === 0 ? 'none' : 'block' }}
+              ><IoArrowBack size={40} />
+              </button>
+              <button
+                onClick={handleNextPage}
+                className="absolute bottom-6 p-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none"
+                disabled={(currentPage + 1) * itemsPerPage >= tasks.length}
+                style={{ display: (currentPage + 1) * itemsPerPage >= tasks.length ? 'none' : 'block' }}
+              ><IoArrowForward size={40} />
+              </button>
             </div>
-        </div>
-        {!isDisabled &&
-        <div className="mb-3">
-            <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">期限</label>
-            <input type="datetime-local" value={currentDateTime} className="p-1.5 w-full rounded-lg opacity-70 border-white-700 text-sm" style={{ fontSize: '16px' }} disabled={isDisabled} />
-        </div>
+            <div className="absolute bottom-10 right-1/2 flex justify-center mt-4">
+              <p className="text-lg font-bold text-gray-800">
+                {currentPage + 1}/{Math.ceil(tasks.length / itemsPerPage)}
+              </p>
+            </div>
+          </div>) :
+          (
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-11/12 xl:w-3/4 md:w-3/4 lg:w-2/3 p-4 bg-white bg-opacity-70 rounded-lg z-30">
+              <div className='flex items-center justify-between'>
+                <button onClick={changeTaskUpdate} className='mr-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none'>
+                  <IoArrowBack size={40} />
+                </button>
+                <div className='flex-grow text-center font-bold'>
+                  タスク編集
+                </div>
+                <div className='w-10'></div>
+              </div>
+
+              <form onSubmit={(e) => e.preventDefault()} className='mt-10 md:mt-20'>
+                <div className="mb-3">
+                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">タスク名 (30文字)</label>
+                  <input name="taskName" type="text" maxLength={30} required className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">詳細/説明 (200文字)</label>
+                  <textarea maxLength={200} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} onBlur={handleBlur} />
+                </div>
+                <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">期限あり / なし</label>
+                <div className='flex mb-3'>
+                  <div className='mr-6'>
+                    <label className='text-sm font-bold md:text-lg'>
+                      <input type="radio" value="on" checked={selectedOption === 'on'} onChange={handleOptionChange} />
+                      あり
+                    </label>
+                  </div>
+                  <div>
+                    <label className='text-sm font-bold md:text-lg'>
+                      <input type="radio" value="off" checked={selectedOption === 'off'} onChange={handleOptionChange} />
+                      なし
+                    </label>
+                  </div>
+                </div>
+                {!isDisabled &&
+                  <div className="mb-3">
+                    <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">期限</label>
+                    <input type="datetime-local" value={currentDateTime} className="p-1.5 w-full rounded-lg opacity-70 border-white-700 text-sm" style={{ fontSize: '16px' }} disabled={isDisabled} />
+                  </div>
+                }
+                <div className="mb-3">
+                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">優先度</label>
+                  <select
+                    className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm"
+                    style={{ fontSize: '16px' }}
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)} >
+                    <option value="高">高</option>
+                    <option value="中">中</option>
+                    <option value="低">低</option>
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">場所の詳細 (50文字)</label>
+                  <textarea maxLength={50} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} onBlur={handleBlur}></textarea>
+                </div>
+                <button onClick={updateTask} type="submit" className="w-full p-1.5 bg-indigo-500 text-white rounded-lg hover:opacity-90 text-sm md:text-lg">タスクを変更</button>
+              </form>
+            </div>
+
+          )
         }
-        <div className="mb-3">
-            <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">優先度</label>
-            <select className="w-full p-1.5 border rounded-lg opacity-70 border-white-700 text-sm" style={{ fontSize: '16px' }}>
-                <option value="high">高</option>
-                <option value="medium">中</option>
-                <option value="low">低</option>
-            </select>
-        </div>
-        <div className="mb-3">
-            <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">場所の詳細 (50文字)</label>
-            <textarea maxLength={50} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} onBlur={handleBlur}></textarea>
-        </div>
-        <button onClick={updateTask} type="submit" className="w-full p-1.5 bg-indigo-500 text-white rounded-lg hover:opacity-90 text-sm md:text-lg">タスクを変更</button>
-      </form>
-  </div>
-
-  )
-}
-  </div>
-  return (
-  <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
-    <ToastContainer />
-    <form onSubmit={handleSearch} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-11/12 md:w-1/2">
-    </form>
-  </div>
-  );
-
+      </div>
+      <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
+        <ToastContainer />
+        <form onSubmit={handleSearch} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-11/12 md:w-1/2">
+        </form>
+      </div>
     </div>
   );
 };

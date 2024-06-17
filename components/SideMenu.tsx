@@ -6,7 +6,6 @@ import { RiMenu2Line } from "react-icons/ri";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { BiLoader } from "react-icons/bi";
 import { CiMemoPad } from "react-icons/ci";
-import { FiLogOut } from "react-icons/fi";
 import { IoSettingsSharp } from "react-icons/io5";
 
 import logoImage from "@/components/image/task-link_logo.png";
@@ -45,8 +44,8 @@ const SideMenu = () => {
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex pr-30 hover:bg-gray-700 ${pathname == "/none_1" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_1" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/none_2" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_2" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/none_3" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_3" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
-            <li className='mt-96 text-2xl ml-1'><Link href={"/setting"} className='flex'><IoSettingsSharp className='mt-1 mr-1'/>設定</Link></li>
-            <li className='mt-6 text-2xl ml-1 flex'><LogoutButton/></li>
+            <li className='mt-96 text-2xl ml-1 hover:text-gray-300 '><Link href={"/setting"} className='flex'><IoSettingsSharp className='mt-1 mr-1'/>設定</Link></li>
+            <li className='mt-6 text-2xl ml-1 flex hover:text-gray-300'><LogoutButton/></li>
           </ul>
           </div>
       </div>

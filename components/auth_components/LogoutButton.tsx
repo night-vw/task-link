@@ -27,7 +27,7 @@ const LogoutButton = () => {
 
     return (
         <button onClick={Logout} disabled={loading}>
-            {loading ? "ログアウト中..." : <div className='flex'><FiLogOut className='mt-1 mr-1'/>ログアウト</div>}
+            {loading ? <div className='text-gray-300'>ログアウト中...</div> : <div className='flex'><FiLogOut className='mt-1 mr-1'/>ログアウト</div>}
         </button>
     );
 };
