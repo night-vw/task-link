@@ -68,23 +68,8 @@ const SideMenu = () => {
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex pr-30 hover:bg-gray-700 ${pathname == "/none_1" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_1" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/none_2" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_2" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/none_3" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_3" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
-            <li className='absolute bottom-2 left-5 mb-4'>
-              <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <FaUserCircle className="text-5xl" />
-                  <div className='text-2xl mt-2'>UserName</div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuLabel>アカウント</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={editProfile}>プロフィール</DropdownMenuItem>
-                  <DropdownMenuItem>設定</DropdownMenuItem>
-                  <LogoutButton/>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </li>
           </ul>
-        </div>
+          </div>
       </div>
 
       <div className={`flex-1 ml-0 md:ml-64 transition-all duration-200 ease-in-out`}>
