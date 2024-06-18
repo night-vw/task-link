@@ -31,6 +31,20 @@ import foodIcon from '@/public/food-icon.png';
 import shoppingIcon from '@/public/shopping-icon.png';
 
 const MapComponent = () => {
+
+  interface TaskData {
+    id: number;
+    taskName: string;
+    taskDescription: string;
+    deadlineBool: boolean;
+    deadlineDate: string | null;
+    priority: string;
+    placeDescription: string;
+    userId: string | null;
+    latitude: number;
+    longitude: number;
+    category: string;
+  }
   const supabase = createClientComponentClient();
   const mapRef = useRef<L.Map | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -55,21 +69,7 @@ const MapComponent = () => {
   const [taskLength, setTaskLength] = useState(20);
   const [taskUpdate, setTaskUpdate] = useState(false);
   const [priority, setPriority] = useState('高');
-
-  const tasks = Array.from({ length: 50 }, (_, index) => `タスク${index + 1}`);
-
-  interface TaskData {
-    taskName: string;
-    taskDescription: string;
-    deadlineBool: boolean;
-    deadlineDate: string | null;
-    priority: string;
-    placeDescription: string;
-    userId: string | null;
-    latitude: number;
-    longitude: number;
-    markerUrl: string;
-  }
+  const [tasks, setTasks] = useState<TaskData[]>([]);
 
   useEffect(() => {
     const now = new Date();
@@ -82,7 +82,6 @@ const MapComponent = () => {
 
     const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
     setCurrentDateTime(formattedDateTime);
-    console.log(formattedDateTime)
   }, []);
 
   useEffect(() => {
@@ -451,38 +450,41 @@ const MapComponent = () => {
     setCurrentPage((prevPage) => prevPage - 1);
   };
 
-  const jumpTaskLocation = () => {
+  const jumpTaskLocation = (lat: number, lon: number, taskName: string) => {
     setTaskListVisible(false);
     if (mapRef.current) {
-      mapRef.current.flyTo([34.687257, 135.525855], 16);
-      const customIcon = L.icon({
-        iconUrl: '/marker-icon.png',
-        iconSize: [38, 38],
-        iconAnchor: [22, 38],
-        popupAnchor: [-3, -38],
+      mapRef.current.flyTo([lat, lon], 16);
+  
+      // 既存のマーカーを探してポップアップを表示する
+      mapRef.current.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          const markerLatLng = layer.getLatLng();
+          if (markerLatLng.lat === lat && markerLatLng.lng === lon) {
+            layer.openPopup();
+          }
+        }
       });
-      const marker = L.marker([34.687257, 135.525855], { icon: customIcon }).addTo(mapRef.current)
-        .bindPopup(`タスク`)
-        .openPopup();
-      setSearchMarker(marker);
     }
-  }
+  };
+  
 
   const renderTasks = () => {
     const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return tasks.slice(startIndex, endIndex).map((task, index) => (
-      <li key={index} className="mb-2 p-2 border-b border-gray-200 flex items-center justify-start">
-        <Image src={workIcon} alt="Task Marker" className="w-6 h-6 mr-2" />
+    return tasks.slice(startIndex, endIndex).map((task) => (
+      <li key={task.id} className="mb-2 p-2 border-b border-gray-200 flex items-center justify-start">
+        <Image src={task.category} alt="Task Marker" className="w-6 h-6 mr-2" width={24} height={24} />
         <button onClick={changeTaskUpdate} className="text-left">
-          <span>{(task.length >= taskLength) ? `${task.slice(0, taskLength)}...` : task}</span>
+          <span>{task && task.taskName && task.taskName.length >= taskLength ? `${task.taskName.slice(0, taskLength)}...` : task.taskName}</span>
         </button>
-        <button style={{ color: '#243C74' }} className='absolute right-16' onClick={jumpTaskLocation}><IoMdPin /></button>
-        <button style={{ color: '#FC644C' }} className='absolute right-5 '><MdDelete /></button>
+        <button style={{ color: '#243C74' }} className='absolute right-16' onClick={() => jumpTaskLocation(task.latitude, task.longitude, task.taskName)}><IoMdPin /></button>
+        <button style={{ color: '#FC644C' }} className='absolute right-5 ' onClick={() => confirmDeleteTask(task.id)}><MdDelete /></button>
       </li>
     ));
   };
-
+  
+  
+  
 
   const handleTouchStart = () => {
     setTimeout(() => {
@@ -495,11 +497,7 @@ const MapComponent = () => {
 
 
   const changeTaskUpdate = () => {
-    if (taskUpdate) {
-      setTaskUpdate(false);
-    } else {
-      setTaskUpdate(true);
-    }
+    setTaskUpdate(!taskUpdate);
   }
 
   const updateTask = () => {
@@ -525,7 +523,7 @@ const MapComponent = () => {
   }
 
   const addTaskToSupabase = async (taskData: TaskData) => {
-    const { taskName, taskDescription, deadlineBool, deadlineDate, priority, placeDescription, userId, latitude, longitude, markerUrl } = taskData;
+    const { taskName, taskDescription, deadlineBool, deadlineDate, priority, placeDescription, userId, latitude, longitude, category } = taskData;
 
     try {
       const { data, error } = await supabase
@@ -541,7 +539,7 @@ const MapComponent = () => {
             user_id: userId,
             latitude: latitude,
             longitude: longitude,
-            category: markerUrl
+            category: category
           }
         ]);
 
@@ -606,6 +604,7 @@ const MapComponent = () => {
     const { lat, lng } = markerPosition;
 
     const taskData: TaskData = {
+      id: 0, // Dummy ID, will be replaced by actual ID from Supabase
       taskName,
       taskDescription,
       deadlineBool,
@@ -615,7 +614,7 @@ const MapComponent = () => {
       userId,
       latitude: lat,
       longitude: lng,
-      markerUrl
+      category: markerUrl
     };
 
     await addTaskToSupabase(taskData);
@@ -650,10 +649,76 @@ const MapComponent = () => {
           .bindPopup(`<b>${task.task_name}</b><br>${task.task_description}`);
       });
     }
+  
+    setTasks(data.map(task => ({
+      ...task,
+      taskName: task.task_name, // task_nameをtaskNameにマッピング
+    })));
+  };
+  
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+  
+
+  const confirmDeleteTask = (taskId: number) => {
+    if (window.confirm('このタスクを削除してもよろしいですか？')) {
+      deleteTask(taskId);
+    }
+  };
+
+  const deleteTask = async (taskId: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('map_task')
+        .delete()
+        .eq('id', taskId);
+  
+      if (error) {
+        throw error;
+      }
+  
+      // マーカーを削除する処理
+      if (mapRef.current !== null) {
+        mapRef.current.eachLayer((layer) => {
+          if (layer instanceof L.Marker) {
+            const markerLatLng = layer.getLatLng();
+            const taskToDelete = tasks.find(task => task.id === taskId);
+            if (taskToDelete && markerLatLng.lat === taskToDelete.latitude && markerLatLng.lng === taskToDelete.longitude) {
+              mapRef.current?.removeLayer(layer);
+            }
+          }
+        });
+      }
+  
+      toast.success('タスクが削除されました', {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        className: 'text-base font-black',
+      });
+  
+      fetchTasks(); // タスク削除後にタスク一覧を再取得
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('タスクの削除に失敗しました', {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        className: 'text-base font-black',
+      });
+    }
   };
   
   
-
   useEffect(() => {
     fetchTasks();
   }, []);
