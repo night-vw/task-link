@@ -5,9 +5,6 @@ import Image from 'next/image';
 import { RiMenu2Line } from "react-icons/ri";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { BiLoader } from "react-icons/bi";
-import { CiMemoPad } from "react-icons/ci";
-import { IoSettingsSharp } from "react-icons/io5";
-
 import logoImage from "@/components/image/task-link_logo.png";
 import { usePathname } from 'next/navigation';
 import LogoutButton from './auth_components/LogoutButton';
@@ -40,7 +37,6 @@ const SideMenu = () => {
           </div>
           <ul className='mt-10'>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/" onClick={handleLinkClick} className='flex pr-10'><FaMapMarkedAlt className='pr-2' />Taskマップ</Link></li>
-            <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/about" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/about" onClick={handleLinkClick} className='flex pr-20'><CiMemoPad className='pr-2' />Taskメモ</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex pr-30 hover:bg-gray-700 ${pathname == "/none_1" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_1" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/none_2" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_2" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/none_3" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_3" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
