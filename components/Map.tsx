@@ -153,17 +153,6 @@ const MapComponent = () => {
       L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
         attribution: '<a href="https://developers.google.com/maps/documentation?hl=ja">Google Map</a>',
       }).addTo(mapRef.current);
-
-      const customIcon = L.icon({
-        iconUrl: '/marker-icon.png',
-        iconSize: [38, 38],
-        iconAnchor: [22, 38],
-        popupAnchor: [-3, -38],
-      });
-
-      L.marker([35.68078249, 139.767235], { icon: customIcon }).addTo(mapRef.current)
-        .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
-        .openPopup();
     }
 
     if (navigator.geolocation) {
