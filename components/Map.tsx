@@ -71,18 +71,25 @@ const MapComponent = () => {
   const [priority, setPriority] = useState('高');
   const [tasks, setTasks] = useState<TaskData[]>([]);
 
+  const [updateTaskName,setUpdateTaskName] = useState(""); 
+  const [updateDescription,setUpdateDescription] = useState(""); 
+  const [updateDeadlinebool,setUpdateDeadlinebool] = useState(false); 
+  const [updateDeadline,setUpdateDeadline] = useState(""); 
+  const [updatePriority,setUpdatePriority] = useState("中"); 
+  const [updatePlaceDescription,setUpdatePlaceDescription] = useState(""); 
+  const [updateTaskId,setUpdateTaskId] =useState("");
+
   useEffect(() => {
     const now = new Date();
     const jstTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
     const year = jstTime.getFullYear();
     const month = String(jstTime.getMonth() + 1).padStart(2, '0');
     const day = String(jstTime.getDate()).padStart(2, '0');
-    const hours = String(jstTime.getHours()).padStart(2, '0');
-    const minutes = String(jstTime.getMinutes()).padStart(2, '0');
-
-    const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-    setCurrentDateTime(formattedDateTime);
+  
+    const formattedDate = `${year}-${month}-${day}`;
+    setCurrentDateTime(formattedDate);
   }, []);
+  
 
   useEffect(() => {
     function handleResize() {
@@ -153,6 +160,17 @@ const MapComponent = () => {
       L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
         attribution: '<a href="https://developers.google.com/maps/documentation?hl=ja">Google Map</a>',
       }).addTo(mapRef.current);
+
+      const customIcon = L.icon({
+        iconUrl: '/marker-icon.png',
+        iconSize: [38, 38],
+        iconAnchor: [22, 38],
+        popupAnchor: [-3, -38],
+      });
+
+      L.marker([35.68078249, 139.767235], { icon: customIcon }).addTo(mapRef.current)
+        .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+        .openPopup();
     }
 
     if (navigator.geolocation) {
@@ -460,21 +478,20 @@ const MapComponent = () => {
   const renderTasks = () => {
     const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return tasks.slice(startIndex, endIndex).map((task) => (
-      <li key={task.id} className="mb-2 p-2 border-b border-gray-200 flex items-center justify-start">
-        <Image src={task.category} alt="Task Marker" className="w-6 h-6 mr-2" width={24} height={24} />
-        <button onClick={changeTaskUpdate} className="text-left">
-          <span>{task && task.taskName && task.taskName.length >= taskLength ? `${task.taskName.slice(0, taskLength)}...` : task.taskName}</span>
-        </button>
-        <button style={{ color: '#243C74' }} className='absolute right-16' onClick={() => jumpTaskLocation(task.latitude, task.longitude, task.taskName)}><IoMdPin /></button>
-        <button style={{ color: '#FC644C' }} className='absolute right-5 ' onClick={() => confirmDeleteTask(task.id)}><MdDelete /></button>
-      </li>
-    ));
+    return tasks.slice(startIndex, endIndex).map((task) => {
+      return (
+        <li key={task.id} className="mb-2 p-2 border-b border-gray-200 flex items-center justify-start">
+          <Image src={task.category} alt="Task Marker" className="w-6 h-6 mr-2" width={24} height={24} />
+          <button id={task.id.toString()} onClick={changeTaskUpdate} className="text-left">
+            <span>{task && task.taskName && task.taskName.length >= taskLength ? `${task.taskName.slice(0, taskLength)}...` : task.taskName}</span>
+          </button>
+          <button style={{ color: '#243C74' }} className='absolute right-16' onClick={() => jumpTaskLocation(task.latitude, task.longitude, task.taskName)}><IoMdPin /></button>
+          <button style={{ color: '#FC644C' }} className='absolute right-5 ' onClick={() => confirmDeleteTask(task.id)}><MdDelete /></button>
+        </li>
+      );
+    });
   };
   
-  
-  
-
   const handleTouchStart = () => {
     setTimeout(() => {
       document.body.style.overflow = 'hidden'; // スクロールを無効にする
@@ -485,35 +502,82 @@ const MapComponent = () => {
   };
 
 
-  const changeTaskUpdate = () => {
-    setTaskUpdate(!taskUpdate);
-  }
-
-  const updateTask = () => {
-    setTaskUpdate(false);
-    const isMobile = window.innerWidth <= 768;
-
-    toast(
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        タスクが変更されました
-        <Image src={map_pinIcon} alt="Task Added" style={{ width: '24px', height: '24px', marginLeft: '10px' }} />
-      </div>,
-      {
-        position: isMobile ? "top-center" : "bottom-right",
-        autoClose: 5000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        className: 'text-base font-black',
+  const changeTaskUpdate = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    const buttonId = event.currentTarget.id;
+    setUpdateTaskId(buttonId);
+  
+    try {
+      const { data, error } = await supabase
+        .from('map_task')
+        .select('*')
+        .eq('id', buttonId);
+  
+      if (error) {
+        console.error('データの取得に失敗しました:', error);
+        return;
       }
-    );
-  }
+  
+      if (data && data.length > 0) {
+        setUpdateTaskName(data[0].task_name);
+        setUpdateDescription(data[0].task_description);
+        setUpdateDeadlinebool(data[0].deadline_bool);
+        setUpdateDeadline(data[0].deadline_date);
+        setUpdatePriority(data[0].priority);
+        setUpdatePlaceDescription(data[0].place_description);
+      }
+  
+      setTaskUpdate(!taskUpdate);
+    } catch (error) {
+      console.error('エラーが発生しました:', error);
+    }
+  };
+  
 
+  const changeTaskUpdate_Back = () => {
+    setTaskUpdate(false);
+  }
+  
+  const updateTask = async () => {
+    setTaskUpdate(false);
+  
+    const isMobile = window.innerWidth <= 768;
+  
+    const { data, error } = await supabase
+      .from('map_task')
+      .update({
+        task_name: updateTaskName,
+        task_description: updateDescription,
+        deadline_bool: updateDeadlinebool,
+        deadline_date: updateDeadline, 
+        priority: updatePriority,
+        place_description: updatePlaceDescription
+      })
+      .eq('id', updateTaskId);
+  
+    if (error) {
+      console.error('Error updating task:', error);
+      toast.error('タスクの更新に失敗しました');
+      return;
+    }
+  
+    toast.success('タスクが更新されました', {
+      position: "bottom-right",
+      autoClose: 5000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      className: 'text-base font-black',
+    });
+  
+    fetchTasks(); // ここでタスクの更新後に再取得する
+  };
+  
+  
   const addTaskToSupabase = async (taskData: TaskData) => {
     const { taskName, taskDescription, deadlineBool, deadlineDate, priority, placeDescription, userId, latitude, longitude, category } = taskData;
-
+  
     try {
       const { data, error } = await supabase
         .from('map_task')
@@ -531,11 +595,11 @@ const MapComponent = () => {
             category: category
           }
         ]);
-
+  
       if (error) {
         throw error;
       }
-
+  
       toast.success('タスクが追加されました', {
         position: "bottom-right",
         autoClose: 5000,
@@ -546,7 +610,7 @@ const MapComponent = () => {
         progress: undefined,
         className: 'text-base font-black',
       });
-
+  
       fetchTasks(); // タスク追加後にタスク一覧を再取得してマーカーを表示
     } catch (error) {
       console.error('Error adding task:', error);
@@ -565,17 +629,22 @@ const MapComponent = () => {
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+  
     const taskName = (e.target as any).elements.taskName.value;
     const taskDescription = (e.target as any).elements.taskDescription.value;
     const deadlineBool = selectedOption === 'on';
-    const deadlineDate = deadlineBool ? (e.target as any).elements.deadlineDate.value : null;
+    let deadlineDate = deadlineBool ? (e.target as any).elements.deadlineDate.value : null;
+  
+    if (deadlineDate) {
+      deadlineDate = new Date(deadlineDate).toISOString().split('T')[0]; // ISO形式の日付部分のみを取得
+    }
+  
     const priority = (e.target as any).elements.priority.value;
     const placeDescription = (e.target as any).elements.placeDescription.value;
-
+  
     const userResponse = await supabase.auth.getUser();
     const userId = userResponse.data?.user?.id || null;
-
+  
     const markerPosition = userMarker?.getLatLng();
     if (!markerPosition) {
       toast.error('マーカーの位置を設定してください。', {
@@ -591,7 +660,7 @@ const MapComponent = () => {
       return;
     }
     const { lat, lng } = markerPosition;
-
+  
     const taskData: TaskData = {
       id: 0, // Dummy ID, will be replaced by actual ID from Supabase
       taskName,
@@ -605,10 +674,11 @@ const MapComponent = () => {
       longitude: lng,
       category: markerUrl
     };
-
+  
     await addTaskToSupabase(taskData);
     closeForm();
   };
+  
 
   const fetchTasks = async () => {
     const userResponse = await supabase.auth.getUser();
@@ -635,7 +705,7 @@ const MapComponent = () => {
   
         const marker = L.marker([task.latitude, task.longitude], { icon: customIcon })
           .addTo(mapRef.current as L.Map)
-          .bindPopup(`<b>${task.task_name}</b><br>${task.task_description}`);
+          .bindPopup(`<b>${task.task_name}</b><br>${task.task_description}<br>${task.place_description}`);
       });
     }
   
@@ -711,6 +781,30 @@ const MapComponent = () => {
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  const formatDateToDatetimeLocal = (date: string) => {
+    return date + "T00:00";
+  };
+
+  const handleUpdateTaskNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUpdateTaskName(e.target.value);
+  };
+  const handleUpdateDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setUpdateDescription(e.target.value);
+  };
+  const handleUpdateDeadlineBoolChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUpdateDeadlinebool(e.target.value === 'on');
+  };
+  const handleUpdateDeadlineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUpdateDeadline(e.target.value);
+  };
+  
+  const handleUpdatePriorityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setUpdatePriority(e.target.value);
+  };
+  const handleUpdatePlaceDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setUpdatePlaceDescription(e.target.value);
+  };
 
   return (
     <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
@@ -875,14 +969,15 @@ const MapComponent = () => {
             期限
           </label>
           <input
-            name="deadlineDate"
-            type="datetime-local"
-            value={currentDateTime}
-            onChange={(e) => setCurrentDateTime(e.target.value)}
-            className="p-1.5 w-full rounded-lg border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            style={{ fontSize: '16px' }}
-            disabled={isDisabled}
-          />
+              name="deadlineDate"
+              type="date"
+              value={currentDateTime}
+              onChange={(e) => setCurrentDateTime(e.target.value)}
+              className="p-1.5 w-full rounded-lg border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              style={{ fontSize: '16px' }}
+              disabled={isDisabled}
+            />
+
         </div>
       )}
       <div className="mb-3">
@@ -976,69 +1071,112 @@ const MapComponent = () => {
               </p>
             </div>
           </div>) :
-          (
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-11/12 xl:w-3/4 md:w-3/4 lg:w-2/3 p-4 bg-white bg-opacity-70 rounded-lg z-30">
-              <div className='flex items-center justify-between'>
-                <button onClick={changeTaskUpdate} className='mr-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none'>
-                  <IoArrowBack size={40} />
-                </button>
-                <div className='flex-grow text-center font-bold'>
-                  タスク編集
-                </div>
-                <div className='w-10'></div>
+        (
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-11/12 xl:w-3/4 md:w-3/4 lg:w-2/3 p-4 bg-white bg-opacity-70 rounded-lg z-30">
+            <div className='flex items-center justify-between'>
+              <button onClick={changeTaskUpdate_Back} className='mr-2 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 focus:outline-none'>
+                <IoArrowBack size={40} />
+              </button>
+              <div className='flex-grow text-center font-bold'>
+                タスク編集
               </div>
-
-              <form onSubmit={(e) => e.preventDefault()} className='mt-10 md:mt-20'>
-                <div className="mb-3">
-                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">タスク名 (30文字)</label>
-                  <input name="taskName" type="text" maxLength={30} required className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} />
-                </div>
-                <div className="mb-3">
-                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">詳細/説明 (200文字)</label>
-                  <textarea maxLength={200} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} onBlur={handleBlur} />
-                </div>
-                <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">期限あり / なし</label>
-                <div className='flex mb-3'>
-                  <div className='mr-6'>
-                    <label className='text-sm font-bold md:text-lg'>
-                      <input type="radio" value="on" checked={selectedOption === 'on'} onChange={handleOptionChange} />
-                      あり
-                    </label>
-                  </div>
-                  <div>
-                    <label className='text-sm font-bold md:text-lg'>
-                      <input type="radio" value="off" checked={selectedOption === 'off'} onChange={handleOptionChange} />
-                      なし
-                    </label>
-                  </div>
-                </div>
-                {!isDisabled &&
-                  <div className="mb-3">
-                    <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">期限</label>
-                    <input type="datetime-local" value={currentDateTime} className="p-1.5 w-full rounded-lg opacity-70 border-white-700 text-sm" style={{ fontSize: '16px' }} disabled={isDisabled} />
-                  </div>
-                }
-                <div className="mb-3">
-                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">優先度</label>
-                  <select
-                    className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm"
-                    style={{ fontSize: '16px' }}
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)} >
-                    <option value="高">高</option>
-                    <option value="中">中</option>
-                    <option value="低">低</option>
-                  </select>
-                </div>
-                <div className="mb-3">
-                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">場所の詳細 (50文字)</label>
-                  <textarea maxLength={50} className="w-full p-1.5 border rounded-lg opacity-70 border-slate-700 text-sm" style={{ fontSize: '16px' }} onBlur={handleBlur}></textarea>
-                </div>
-                <button onClick={updateTask} type="submit" className="w-full p-1.5 bg-indigo-500 text-white rounded-lg hover:opacity-90 text-sm md:text-lg">タスクを変更</button>
-              </form>
+              <div className='w-10'></div>
             </div>
 
-          )
+            <form onSubmit={(e) => e.preventDefault()} className='mt-10 md:mt-20'>
+              <div className="mb-3">
+                <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">タスク名 (30文字)</label>
+                <input
+                  name="taskName"
+                  type="text"
+                  maxLength={30}
+                  required
+                  className="w-full p-1.5 border rounded-lg border-slate-700 text-sm"
+                  style={{ fontSize: '16px' }}
+                  value={updateTaskName}
+                  onChange={handleUpdateTaskNameChange}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">詳細/説明 (200文字)</label>
+                <textarea
+                  maxLength={200}
+                  className="w-full p-1.5 border rounded-lg border-slate-700 text-sm"
+                  style={{ fontSize: '16px' }}
+                  onBlur={handleBlur}
+                  value={updateDescription}
+                  onChange={handleUpdateDescriptionChange}
+                />
+              </div>
+              <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">期限あり / なし</label>
+              <div className='flex mb-3'>
+                <div className='mr-6'>
+                  <label className='text-sm font-bold md:text-lg'>
+                    <input
+                      type="radio"
+                      value="on"
+                      checked={updateDeadlinebool === true}
+                      onChange={handleUpdateDeadlineBoolChange}
+                    />
+                    あり
+                  </label>
+                </div>
+                <div>
+                  <label className='text-sm font-bold md:text-lg'>
+                    <input
+                      type="radio"
+                      value="off"
+                      checked={updateDeadlinebool === false}
+                      onChange={handleUpdateDeadlineBoolChange}
+                    />
+                    なし
+                  </label>
+                </div>
+              </div>
+              {updateDeadlinebool && (
+                <div className="mb-3">
+                  <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">期限</label>
+                  <input
+                    type="date"
+                    value={updateDeadline}
+                    className="p-1.5 w-full rounded-lg border-white-700 text-sm"
+                    style={{ fontSize: '16px' }}
+                    disabled={isDisabled}
+                    onChange={handleUpdateDeadlineChange}
+                  />
+                </div>
+              )}
+
+
+              <div className="mb-3">
+                <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">優先度</label>
+                <select
+                  className="w-full p-1.5 border rounded-lg border-slate-700 text-sm"
+                  style={{ fontSize: '16px' }}
+                  value={updatePriority}
+                  onChange={handleUpdatePriorityChange}
+                >
+                  <option value="高">高</option>
+                  <option value="中">中</option>
+                  <option value="低">低</option>
+                </select>
+              </div>
+              <div className="mb-3">
+                <label className="block text-gray-700 text-sm font-bold mb-1 md:text-lg">場所の詳細 (50文字)</label>
+                <textarea
+                  maxLength={50}
+                  className="w-full p-1.5 border rounded-lg border-slate-700 text-sm"
+                  style={{ fontSize: '16px' }}
+                  onBlur={handleBlur}
+                  value={updatePlaceDescription}
+                  onChange={handleUpdatePlaceDescriptionChange}
+                />
+              </div>
+              <button onClick={updateTask} type="submit" className="w-full p-1.5 bg-indigo-500 text-white rounded-lg hover:opacity-90 text-sm md:text-lg">タスクを変更</button>
+            </form>
+          </div>
+        )
+
         }
       </div>
       <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
