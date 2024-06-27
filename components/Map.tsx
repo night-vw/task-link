@@ -78,7 +78,9 @@ const MapComponent = () => {
   const [updatePriority,setUpdatePriority] = useState("中"); 
   const [updatePlaceDescription,setUpdatePlaceDescription] = useState(""); 
   const [updateTaskId,setUpdateTaskId] =useState("");
+  const [selectedSortOption, setSelectedSortOption] = useState('add_date');
 
+  
   useEffect(() => {
     const now = new Date();
     const jstTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
@@ -161,16 +163,6 @@ const MapComponent = () => {
         attribution: '<a href="https://developers.google.com/maps/documentation?hl=ja">Google Map</a>',
       }).addTo(mapRef.current);
 
-      const customIcon = L.icon({
-        iconUrl: '/marker-icon.png',
-        iconSize: [38, 38],
-        iconAnchor: [22, 38],
-        popupAnchor: [-3, -38],
-      });
-
-      L.marker([35.68078249, 139.767235], { icon: customIcon }).addTo(mapRef.current)
-        .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
-        .openPopup();
     }
 
     if (navigator.geolocation) {
@@ -680,19 +672,36 @@ const MapComponent = () => {
   };
   
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (sortOption: string = 'add_date') => {
     const userResponse = await supabase.auth.getUser();
     const userId = userResponse.data?.user?.id || null;
   
-    const { data, error } = await supabase
+    let query = supabase
       .from('map_task')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });  // Order by created_at in descending order
+      .eq('task_completed', false)
+      .order('created_at', { ascending: false });
+  
+    if (sortOption === 'near_deadline') {
+      query = query.gt('deadline_date', new Date().toISOString()).order('deadline_date', { ascending: true });
+    } else if (sortOption === 'expired') {
+      query = query.lte('deadline_date', new Date().toISOString()).order('priority', { ascending: false });
+    }
+  
+    const { data, error } = await query;
   
     if (error) {
       console.error('Error fetching tasks:', error);
       return;
+    }
+  
+    // クライアントサイドで priority を並び替える
+    if (sortOption === 'high_priority') {
+      const priorityOrder: { [key: string]: number } = { '高': 3, '中': 2, '低': 1 };
+      data.sort((a, b) => {
+        return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0) || new Date(a.deadline_date).getTime() - new Date(b.deadline_date).getTime();
+      });
     }
   
     if (mapRef.current !== null) {
@@ -763,7 +772,7 @@ const MapComponent = () => {
         className: 'text-base font-black',
       });
   
-      fetchTasks(); // タスク削除後にタスク一覧を再取得
+      fetchTasks(selectedSortOption); // タスク削除後にタスク一覧を再取得
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('タスクの削除に失敗しました', {
@@ -779,14 +788,14 @@ const MapComponent = () => {
     }
   };
   
-  
+  const handleSortChange = (value: string) => {
+    setSelectedSortOption(value);
+    fetchTasks(value);
+  };
+
   useEffect(() => {
     fetchTasks();
   }, []);
-
-  const formatDateToDatetimeLocal = (date: string) => {
-    return date + "T00:00";
-  };
 
   const handleUpdateTaskNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUpdateTaskName(e.target.value);
@@ -807,6 +816,12 @@ const MapComponent = () => {
   const handleUpdatePlaceDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setUpdatePlaceDescription(e.target.value);
   };
+
+  useEffect(() => {
+    fetchTasks(selectedSortOption);
+  }, [selectedSortOption]);
+  
+  
 
   return (
     <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
@@ -1035,17 +1050,19 @@ const MapComponent = () => {
             <div className='flex'>
               <h2 className="text-2xl font-bold mb-4">Taskリスト</h2>
               <div className='ml-6'>
-                <Select>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="追加日" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="add_date">追加日</SelectItem>
-                    <SelectItem value="high_priority">優先度 高</SelectItem>
-                    <SelectItem value="near_deadline">期限 近</SelectItem>
-                    <SelectItem value="near_deadline">期限切れ</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Select onValueChange={handleSortChange}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="追加日" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="add_date">追加日</SelectItem>
+                  <SelectItem value="high_priority">優先度 高</SelectItem>
+                  <SelectItem value="near_deadline">期限 近</SelectItem>
+                  <SelectItem value="expired">期限切れ</SelectItem>
+                </SelectContent>
+              </Select>
+
+
               </div>
             </div>
             <ul>
