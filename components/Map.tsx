@@ -687,7 +687,8 @@ const MapComponent = () => {
     const { data, error } = await supabase
       .from('map_task')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });  // Order by created_at in descending order
   
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -714,6 +715,7 @@ const MapComponent = () => {
       taskName: task.task_name, // task_nameをtaskNameにマッピング
     })));
   };
+  
   
   useEffect(() => {
     fetchTasks();
