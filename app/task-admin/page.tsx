@@ -152,13 +152,7 @@ const Home: React.FC = () => {
     }
     // ここで実際のタスク追加処理を行う場合は、tasks.push(...) のように追加する
     // この例では、単純にダミータスクを追加しています
-    setTasks([...tasks, {
-      id: tasks.length + 1,
-      name: `タスク ${tasks.length + 1}`,
-      priority: "低",
-      deadline: "2024-07-04",
-      completed: false,
-    }]);
+
   };
 
   // スイッチ切り替え時の処理

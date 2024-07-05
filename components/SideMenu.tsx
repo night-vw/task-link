@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 import LogoutButton from './auth_components/LogoutButton';
 import { MdOutlineWorkspacePremium } from "react-icons/md";
 import { BsUiChecks } from "react-icons/bs";
+import { IoPartlySunnySharp } from "react-icons/io5";
 
 const SideMenu = () => {
 
@@ -40,7 +41,7 @@ const SideMenu = () => {
           <ul className='mt-10'>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/" onClick={handleLinkClick} className='flex pr-10'><FaMapMarkedAlt className='pr-2' />Taskマップ</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex pr-30 hover:bg-gray-700 ${pathname == "/task-admin" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/task-admin" onClick={handleLinkClick} className='flex pr-30'><BsUiChecks className='pr-2' />タスク管理</Link></li>
-            <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/none_2" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/none_2" onClick={handleLinkClick} className='flex pr-30'><BiLoader className='pr-2' />None</Link></li>
+            <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/tenki" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/tenki" onClick={handleLinkClick} className='flex pr-30'><IoPartlySunnySharp className='pr-2' />天気</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/subscription" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/subscription" onClick={handleLinkClick} className='flex pr-30'><MdOutlineWorkspacePremium className='pr-2'/>アップグレード</Link></li>
             <li className='absolute bottom-4 left-2 text-2xl ml-1 flex hover:text-gray-300'>
               <LogoutButton/>
