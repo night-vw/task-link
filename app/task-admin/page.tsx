@@ -188,27 +188,27 @@ const Home: React.FC = () => {
       <main className="flex flex-col items-center justify-start w-full flex-1 px-4 sm:px-6 md:px-8 text-center mt-8">
         <h1 className="text-2xl sm:text-4xl md:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 mt-10">タスク管理</h1>
         <div className="flex flex-col items-center mb-4 sm:mb-6">
-          <span className="mb-2 text-lg sm:text-2xl md:text-xl lg:text-2xl">{isCompleted ? 'タスク完了' : 'タスク未完了'}</span>
+          <span className="mb-2 text-lg sm:text-2xl md:text-xl lg:text-2xl">{isCompleted ? '完了タスク' : '未完了タスク'}</span>
           <Switch checked={isCompleted} onCheckedChange={handleSwitchChange} />
         </div>
         <div className="overflow-x-auto w-full max-w-3xl">
           <table className="table-auto w-full">
             <thead>
               <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold">タスク名</th>
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold">優先度</th>}
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold">期限</th>}
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold">完了確認</th>}
-                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold">タスク完了日付</th>}
-                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold">削除</th>}
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">タスク名</th>
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">優先度</th>}
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">期限</th>}
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">完了確認</th>}
+                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">タスク完了日付</th>}
+                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">削除</th>}
               </tr>
             </thead>
             <tbody>
               {currentTasks.map((task: Task) => (
                 <tr key={task.id}>
-                  <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{truncateTaskName(task.name)}</td>
-                  {!(task.completed) && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{task.priority}</td>}
-                  {!(task.completed) &&<td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-4xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{task.deadline}</td>}
+                  <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{truncateTaskName(task.name)}</td>
+                  {!(task.completed) && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{task.priority}</td>}
+                  {!(task.completed) &&<td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{task.deadline}</td>}
                       {task.completed ?
                        '' : 
                        (
@@ -218,7 +218,7 @@ const Home: React.FC = () => {
                       className="px-2 sm:px-4 py-1 sm:py-2 md:px-3 md:py-1 lg:px-4 lg:py-2 bg-green-500 text-white rounded"
                     >完了</button>
                     </td>)}
-                  {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-2xl md:text-xl lg:text-2xl font-bold">{new Date().toLocaleDateString()}</td>}
+                  {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-xl md:text-xl lg:text-2xl font-bold">{new Date().toLocaleDateString()}</td>}
                   {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3">
                     <button
                       onClick={() => confirmDeletion(task.id)}
