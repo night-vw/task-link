@@ -51,12 +51,13 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 w-screen">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center text-gray-800">Task-Link ログイン</h2>
         <form className="space-y-4" onSubmit={onLogin}>
-        {error && <div className="text-red-500 mb-4">{error}</div>} {/* エラーメッセージの表示 */}
+          {error && <div className="text-red-500 mb-4">{error}</div>} {/* エラーメッセージの表示 */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               メールアドレス
@@ -101,8 +102,15 @@ const LoginPage = () => {
           <p className="text-sm text-gray-600">
             Task-Link を初めてご利用の場合は、
             <br />
-            <Link href="/create-account"className="text-indigo-600 hover:text-indigo-500">
+            <Link href="/create-account" className="text-indigo-600 hover:text-indigo-500">
               アカウントを作成してください
+            </Link>
+          </p>
+          <p className="text-sm text-gray-600 mt-4">
+            パスワードを忘れた場合は、
+            <br />
+            <Link href="/password-reset" className="text-indigo-600 hover:text-indigo-500">
+              こちらからリセットしてください
             </Link>
           </p>
         </div>

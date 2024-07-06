@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // リダイレクト対象外のパスを指定
-  const EXCLUDED_PATHS = ['/landing', '/create-account', '/login'];
+  const EXCLUDED_PATHS = ['/landing', '/create-account', '/login','password-reset'];
   if (!session && !EXCLUDED_PATHS.includes(url.pathname)) {
     url.pathname = '/landing';
     return NextResponse.redirect(url);
@@ -26,5 +26,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/((?!landing|create-account|login|_next/static|_next/image|favicon.ico).*)',
+  matcher: '/((?!landing|create-account|login|password-reset|_next/static|_next/image|favicon.ico).*)',
 };
