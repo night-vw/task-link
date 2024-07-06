@@ -20,7 +20,7 @@ type Task = {
 // ページネーション用のタスク数
 const TASKS_PER_PAGE_DEFAULT = 9; // デフォルトの1ページに表示するタスク数
 
-const Home: React.FC = () => {
+const TaskAdminPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,12 +29,28 @@ const Home: React.FC = () => {
   const [modalAction, setModalAction] = useState<"complete" | "delete">("complete");
   const [isLoading, setIsLoading] = useState(true); // ローディング状態を追加
   const [tasksPerPage, setTasksPerPage] = useState(TASKS_PER_PAGE_DEFAULT); // 1ページに表示するタスク数
+  const [userId, setUserId] = useState<string | null>(null); // ユーザーID用の状態
+
+  // SupabaseからユーザーIDを取得する関数
+  const fetchUserId = async () => {
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error) {
+      console.error('Error fetching user ID:', error);
+      return;
+    }
+
+    setUserId(user?.id || null);
+  };
 
   // Supabaseからタスクを取得する関数
   const fetchTasks = async () => {
+    if (!userId) return;
+
     const { data, error } = await supabase
       .from('map_task')
-      .select('id, task_name, priority, deadline_date, task_completed');
+      .select('id, task_name, priority, deadline_date, task_completed')
+      .eq('user_id', userId);
     
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -59,7 +75,7 @@ const Home: React.FC = () => {
   };
   
   useEffect(() => {
-    fetchTasks();
+    fetchUserId().then(fetchTasks);
 
     // 画面の高さに応じてTASKS_PER_PAGEを設定する
     const updateTasksPerPage = () => {
@@ -79,12 +95,12 @@ const Home: React.FC = () => {
     return () => {
       window.removeEventListener('resize', updateTasksPerPage);
     };
-  }, []);
+  }, [userId]);
 
   // タスクの完了状態を切り替える関数
   const toggleTaskCompletion = async (taskId: number) => {
     const taskToComplete = tasks.find(task => task.id === taskId);
-    if (taskToComplete) {
+    if (taskToComplete && userId) {
       const { error } = await supabase
         .from('map_task')
         .update({ task_completed: true })
@@ -97,7 +113,7 @@ const Home: React.FC = () => {
 
       const { error: insertError } = await supabase
         .from('completed_tasks')
-        .insert({ task_name: taskToComplete.name });
+        .insert({ task_name: taskToComplete.name, user_id: userId });
 
       if (insertError) {
         console.error('Error inserting into completed_tasks:', insertError);
@@ -128,12 +144,14 @@ const Home: React.FC = () => {
     const { error: deleteError1 } = await supabase
       .from('map_task')
       .delete()
-      .eq('id', taskId);
+      .eq('id', taskId)
+      .eq('user_id', userId);
     
     const { error: deleteError2 } = await supabase
       .from('completed_tasks')
       .delete()
-      .eq('task_name', tasks.find(task => task.id === taskId)?.name);
+      .eq('task_name', tasks.find(task => task.id === taskId)?.name)
+      .eq('user_id', userId);
     
     if (deleteError1 || deleteError2) {
       console.error('Error deleting task:', deleteError1 || deleteError2);
@@ -164,16 +182,6 @@ const Home: React.FC = () => {
     const filteredTasks = tasks.filter(task => task.completed === isCompleted);
     const startIndex = (currentPage - 1) * tasksPerPage;
     return filteredTasks.slice(startIndex, startIndex + tasksPerPage);
-  };
-
-  // タスク数が5個以上の場合、次のページに移行する処理
-  const handleAddTask = () => {
-    if (tasks.length % tasksPerPage === 0) {
-      setCurrentPage(currentPage + 1);
-    }
-    // ここで実際のタスク追加処理を行う場合は、tasks.push(...) のように追加する
-    // この例では、単純にダミータスクを追加しています
-
   };
 
   // スイッチ切り替え時の処理
@@ -318,4 +326,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default TaskAdminPage;

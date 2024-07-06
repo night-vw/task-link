@@ -111,7 +111,7 @@ const Weather = () => {
       )}
       {error && <p className="text-red-500">{error}</p>}
       {currentWeather && !loading && (
-        <div className="text-center bg-white bg-opacity-80 p-4 rounded-lg shadow-md mb-4 w-3/4 mt-20 md:w-1/4 md:mt-2">
+        <div className="text-center bg-white bg-opacity-80 p-4 rounded-lg shadow-md mb-4 w-3/4 mt-20 sm:w-1/2 lg:w-1/4 md:mt-2">
           <h2 className="text-2xl font-bold">{currentWeather.name}の現在の天気</h2>
           <p className='flex justify-center'>{renderWeatherIcon(weatherDescriptions[currentWeather.weather[0].description] || currentWeather.weather[0].description)}</p>
           <p>{weatherDescriptions[currentWeather.weather[0].description] || currentWeather.weather[0].description}</p>
