@@ -17,7 +17,8 @@ type Task = {
   completed: boolean;
 };
 
-const TASKS_PER_PAGE = 10; // 1ページに表示するタスク数
+// ページネーション用のタスク数
+const TASKS_PER_PAGE_DEFAULT = 9; // デフォルトの1ページに表示するタスク数
 
 const Home: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -26,6 +27,8 @@ const Home: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [modalAction, setModalAction] = useState<"complete" | "delete">("complete");
+  const [isLoading, setIsLoading] = useState(true); // ローディング状態を追加
+  const [tasksPerPage, setTasksPerPage] = useState(TASKS_PER_PAGE_DEFAULT); // 1ページに表示するタスク数
 
   // Supabaseからタスクを取得する関数
   const fetchTasks = async () => {
@@ -47,16 +50,35 @@ const Home: React.FC = () => {
       completed: task.task_completed,
     }));
   
-    // Sort by priority only
     fetchedTasks.sort((a, b) => {
       return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
     });
   
     setTasks(fetchedTasks);
+    setIsLoading(false); // ローディング終了
   };
   
   useEffect(() => {
     fetchTasks();
+
+    // 画面の高さに応じてTASKS_PER_PAGEを設定する
+    const updateTasksPerPage = () => {
+      if(window.innerHeight < 700) {
+        setTasksPerPage(6);          
+      }
+      else if (window.innerHeight <= 850) {
+        setTasksPerPage(8);
+      }else  {
+        setTasksPerPage(9);
+      }
+    };
+
+    updateTasksPerPage();
+    window.addEventListener('resize', updateTasksPerPage);
+
+    return () => {
+      window.removeEventListener('resize', updateTasksPerPage);
+    };
   }, []);
 
   // タスクの完了状態を切り替える関数
@@ -86,7 +108,6 @@ const Home: React.FC = () => {
         task.id === taskId ? { ...task, completed: true } : task
       ));
 
-      // Show toast notification
       toast.success('タスクを完了しました', {
         position: "bottom-right",
         autoClose: 5000,
@@ -141,13 +162,13 @@ const Home: React.FC = () => {
   // 画面表示用のタスクリストを取得する関数
   const getCurrentTasks = (): Task[] => {
     const filteredTasks = tasks.filter(task => task.completed === isCompleted);
-    const startIndex = (currentPage - 1) * TASKS_PER_PAGE;
-    return filteredTasks.slice(startIndex, startIndex + TASKS_PER_PAGE);
+    const startIndex = (currentPage - 1) * tasksPerPage;
+    return filteredTasks.slice(startIndex, startIndex + tasksPerPage);
   };
 
   // タスク数が5個以上の場合、次のページに移行する処理
   const handleAddTask = () => {
-    if (tasks.length % TASKS_PER_PAGE === 0) {
+    if (tasks.length % tasksPerPage === 0) {
       setCurrentPage(currentPage + 1);
     }
     // ここで実際のタスク追加処理を行う場合は、tasks.push(...) のように追加する
@@ -175,13 +196,23 @@ const Home: React.FC = () => {
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(tasks.filter(task => task.completed === isCompleted).length / TASKS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(tasks.filter(task => task.completed === isCompleted).length / tasksPerPage));
   const currentTasks = getCurrentTasks();
 
-  // 15文字以上の場合に省略する関数
+  // 画面の横幅に応じてタスク名を省略する関数
   const truncateTaskName = (name: string): string => {
-    return name.length > 15 ? `${name.substring(0, 15)}…` : name;
+    const maxLength = window.innerWidth <= 400 ? 10 : 15;
+    return name.length > maxLength ? `${name.substring(0, maxLength)}…` : name;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen text-2xl">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+        <p className="mt-4 text-zinc-600">タスク情報を取得中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -195,30 +226,30 @@ const Home: React.FC = () => {
           <table className="table-auto w-full">
             <thead>
               <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">タスク名</th>
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">優先度</th>}
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">期限</th>}
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">完了確認</th>}
-                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">タスク完了日付</th>}
-                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-base sm:text-base md:text-base lg:text-xl font-bold">削除</th>}
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">タスク名</th>
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">優先度</th>}
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">期限</th>}
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">完了ボタン</th>}
+                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">タスク完了日付</th>}
+                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">削除</th>}
               </tr>
             </thead>
             <tbody>
               {currentTasks.map((task: Task) => (
                 <tr key={task.id}>
-                  <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{truncateTaskName(task.name)}</td>
-                  {!(task.completed) && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{task.priority}</td>}
-                  {!(task.completed) &&<td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{task.deadline}</td>}
+                  <td className="border px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{truncateTaskName(task.name)}</td>
+                  {!(task.completed) && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{task.priority}</td>}
+                  {!(task.completed) &&<td className="border px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-xl md:text-xl lg:text-2xl font-bold whitespace-nowrap">{task.deadline}</td>}
                       {task.completed ?
                        '' : 
                        (
                         <td className="border px-2 sm:px-4 py-2 sm:py-3">
                        <button
                       onClick={() => confirmCompletion(task.id)}
-                      className="px-2 sm:px-4 py-1 sm:py-2 md:px-3 md:py-1 lg:px-4 lg:py-2 bg-green-500 text-white rounded"
+                      className="px-2 text-sm lg:text-lg sm:px-4 py-1 sm:py-2 md:px-3 md:py-1 lg:px-4 lg:py-2 bg-green-500 text-white rounded"
                     >完了</button>
                     </td>)}
-                  {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-xl sm:text-xl md:text-xl lg:text-2xl font-bold">{new Date().toLocaleDateString()}</td>}
+                  {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-xl md:text-xl lg:text-2xl font-bold">{new Date().toLocaleDateString()}</td>}
                   {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3">
                     <button
                       onClick={() => confirmDeletion(task.id)}
@@ -233,23 +264,29 @@ const Home: React.FC = () => {
           </table>
         </div>
       </main>
-      <div className="flex items-center justify-center space-x-4 mb-8">
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-          onClick={handlePrevPage}
-          disabled={currentPage === 1}
-        >
-          ←
-        </button>
-        <span className="text-lg sm:text-xl md:text-lg lg:text-xl">{currentPage} / {totalPages}</span>
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-        >
-          →
-        </button>
-      </div>
+      {totalPages >= 1 && (
+        <div className="relative flex items-center justify-center mb-8 mt-10">
+          {currentPage > 1 && (
+            <button
+              className="absolute -left-20 px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={handlePrevPage}
+            >
+              ←
+            </button>
+          )}
+          <span className="text-lg sm:text-xl md:text-lg lg:text-xl mx-4">
+            {currentPage} / {totalPages}
+          </span>
+          {currentPage < totalPages && (
+            <button
+              className="absolute -right-20 px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={handleNextPage}
+            >
+              →
+            </button>
+          )}
+        </div>
+      )}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 md:pl-72">
           <div className="bg-white rounded-lg p-8 shadow-lg text-center">
