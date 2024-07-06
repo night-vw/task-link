@@ -226,12 +226,12 @@ const Home: React.FC = () => {
           <table className="table-auto w-full">
             <thead>
               <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">タスク名</th>
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">優先度</th>}
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">期限</th>}
-                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">完了ボタン</th>}
-                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">タスク完了日付</th>}
-                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base md:text-base lg:text-xl font-bold">削除</th>}
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-base md:text-base lg:text-xl font-bold">タスク名</th>
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-base md:text-base lg:text-xl font-bold">優先度</th>}
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-base md:text-base lg:text-xl font-bold">期限</th>}
+                {!(isCompleted) && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-base md:text-base lg:text-xl font-bold">完了ボタン</th>}
+                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-base md:text-base lg:text-xl font-bold">タスク完了日付</th>}
+                {isCompleted && <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-base md:text-base lg:text-xl font-bold">削除</th>}
               </tr>
             </thead>
             <tbody>
