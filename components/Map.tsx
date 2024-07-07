@@ -29,6 +29,8 @@ import workIcon from '@/public/work-icon.png';
 import exerciseIcon from '@/public/exercise-icon.png';
 import foodIcon from '@/public/food-icon.png';
 import shoppingIcon from '@/public/shopping-icon.png';
+import { useRouter } from 'next/navigation';
+
 
 const MapComponent = () => {
 
@@ -79,6 +81,9 @@ const MapComponent = () => {
   const [updatePlaceDescription,setUpdatePlaceDescription] = useState(""); 
   const [updateTaskId,setUpdateTaskId] =useState("");
   const [selectedSortOption, setSelectedSortOption] = useState('add_date');
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const router = useRouter();
 
   
   useEffect(() => {
@@ -619,24 +624,79 @@ const MapComponent = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchSubscriptionStatus = async () => {
+      const userResponse = await supabase.auth.getUser();
+      const userId = userResponse.data?.user?.id || null;
+  
+      if (userId) {
+        const { data, error } = await supabase
+          .from('profile')
+          .select('is_subscribed')
+          .eq('id', userId)
+          .single();
+  
+        if (error) {
+          console.error('Error fetching subscription status:', error);
+        } else {
+          console.log('Subscription status:', data.is_subscribed);
+          // 必要に応じてステートに保存する
+          setIsSubscribed(data.is_subscribed);
+        }
+      }
+    };
+  
+    fetchSubscriptionStatus();
+  }, []);
+  
+
+
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-  
+
     const taskName = (e.target as any).elements.taskName.value;
     const taskDescription = (e.target as any).elements.taskDescription.value;
     const deadlineBool = selectedOption === 'on';
     let deadlineDate = deadlineBool ? (e.target as any).elements.deadlineDate.value : null;
-  
+
     if (deadlineDate) {
       deadlineDate = new Date(deadlineDate).toISOString().split('T')[0]; // ISO形式の日付部分のみを取得
     }
-  
+
     const priority = (e.target as any).elements.priority.value;
     const placeDescription = (e.target as any).elements.placeDescription.value;
-  
+
     const userResponse = await supabase.auth.getUser();
     const userId = userResponse.data?.user?.id || null;
-  
+
+    // ユーザーの未完了タスクの数をチェック
+    const { data: incompleteTasks, error: countError } = await supabase
+      .from('map_task')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .eq('task_completed', false);
+
+    if (countError) {
+      console.error('Error fetching task count:', countError);
+      toast.error('タスク数の取得に失敗しました', {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        className: 'text-base font-black',
+      });
+      return;
+    }
+
+    // 未完了タスクが10個以上の場合はサブスクリプションページにリダイレクト
+    if (incompleteTasks.length >= 9 && !isSubscribed) {
+      router.push('/subscription');
+      return;
+    }
+
     const markerPosition = userMarker?.getLatLng();
     if (!markerPosition) {
       toast.error('マーカーの位置を設定してください。', {
@@ -652,9 +712,9 @@ const MapComponent = () => {
       return;
     }
     const { lat, lng } = markerPosition;
-  
+
     const taskData: TaskData = {
-      id: 0, // Dummy ID, will be replaced by actual ID from Supabase
+      id: 0, // ダミーID、Supabaseから実際のIDが割り当てられる
       taskName,
       taskDescription,
       deadlineBool,
@@ -666,10 +726,11 @@ const MapComponent = () => {
       longitude: lng,
       category: markerUrl
     };
-  
+
     await addTaskToSupabase(taskData);
     closeForm();
-  };
+};
+
   
 
   const fetchTasks = async (sortOption: string = 'add_date') => {
