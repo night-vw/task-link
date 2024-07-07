@@ -163,39 +163,39 @@ const MapComponent = () => {
       mapRef.current = L.map('map', {
         zoomControl: false,
       }).setView([35.68078249, 139.767235], 16);
-
+  
       L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
         attribution: '<a href="https://developers.google.com/maps/documentation?hl=ja">Google Map</a>',
       }).addTo(mapRef.current);
-
     }
-
+  
+    let watchId: number | null = null;
+  
     if (navigator.geolocation) {
       const success = (position: GeolocationPosition) => {
         let { latitude, longitude } = position.coords;
         const accuracy = position.coords.accuracy;
-
+  
         console.log(`Latitude: ${latitude}, Longitude: ${longitude}, Accuracy: ${accuracy} meters`);
-
+  
         if (mapRef.current) {
           mapRef.current.setView([latitude, longitude], 16);
-
+  
           const currentLocationMarker = L.circleMarker([latitude, longitude], {
             color: '#FFFFFF',
             fillColor: '#0476D9',
             radius: 15,
             fillOpacity: 1,
             weight: 5
-          }).addTo(mapRef.current)
+          }).addTo(mapRef.current);
         }
-
       };
-
+  
       const error = () => {
         alert("Unable to retrieve your location.");
       };
-
-      navigator.geolocation.getCurrentPosition(success, error, {
+  
+      watchId = navigator.geolocation.watchPosition(success, error, {
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 0,
@@ -203,14 +203,18 @@ const MapComponent = () => {
     } else {
       alert("Geolocation is not supported by this browser.");
     }
-
+  
     return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
       if (mapRef.current !== null) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
   }, []);
+  
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
