@@ -40,7 +40,7 @@ const ForgotPasswordPage = () => {
       const encryptedEmail = encrypt(email);
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_RESET_PASSWORD_REDIRECT_URL}?token=${encryptedEmail}`,
+        redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/password-reset/reset-form?token=${encryptedEmail}`,
       });
       if (resetError) throw resetError;
 
