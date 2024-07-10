@@ -168,6 +168,33 @@ const MapComponent = () => {
         attribution: '<a href="https://developers.google.com/maps/documentation?hl=ja">Google Map</a>',
       }).addTo(mapRef.current);
     }
+
+    // 最初の現在地取得
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          if (mapRef.current) {
+            const currentLocation: LatLngTuple = [latitude, longitude];
+            mapRef.current.setView(currentLocation, 16);
+
+            const currentLocationMarker = L.circleMarker([latitude, longitude], {
+              color: '#FFFFFF',
+              fillColor: '#0476D9',
+              radius: 15,
+              fillOpacity: 1,
+              weight: 5
+            }).addTo(mapRef.current);
+          }
+        },
+        () => {
+          alert("Unable to retrieve your location.");
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
   }, []);
   
   const handleSearch = async (e: React.FormEvent) => {
