@@ -168,54 +168,8 @@ const MapComponent = () => {
         attribution: '<a href="https://developers.google.com/maps/documentation?hl=ja">Google Map</a>',
       }).addTo(mapRef.current);
     }
-  
-    let watchId: number | null = null;
-  
-    if (navigator.geolocation) {
-      const success = (position: GeolocationPosition) => {
-        let { latitude, longitude } = position.coords;
-        const accuracy = position.coords.accuracy;
-  
-        console.log(`Latitude: ${latitude}, Longitude: ${longitude}, Accuracy: ${accuracy} meters`);
-  
-        if (mapRef.current) {
-          mapRef.current.setView([latitude, longitude], 16);
-  
-          const currentLocationMarker = L.circleMarker([latitude, longitude], {
-            color: '#FFFFFF',
-            fillColor: '#0476D9',
-            radius: 15,
-            fillOpacity: 1,
-            weight: 5
-          }).addTo(mapRef.current);
-        }
-      };
-  
-      const error = () => {
-        alert("Unable to retrieve your location.");
-      };
-  
-      watchId = navigator.geolocation.watchPosition(success, error, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      });
-    } else {
-      alert("Geolocation is not supported by this browser.");
-    }
-  
-    return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-      if (mapRef.current !== null) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
   }, []);
   
-
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery) return;
@@ -309,20 +263,15 @@ const MapComponent = () => {
           const { latitude, longitude } = position.coords;
           if (mapRef.current) {
             const currentLocation: LatLngTuple = [latitude, longitude];
-            const mapBounds = mapRef.current.getBounds();
-            const mapCenter = mapRef.current.getCenter();
-            const mapCenterLatLng = latLng(mapCenter.lat, mapCenter.lng);
+            mapRef.current.setView(currentLocation, 16);
 
-            const distance = mapCenterLatLng.distanceTo(latLng(latitude, longitude));
-            const zoomLevel = mapRef.current.getZoom();
-
-            const distanceThreshold = 500;
-
-            if (mapBounds.contains(currentLocation) && distance < distanceThreshold) {
-              mapRef.current.flyTo(currentLocation, zoomLevel);
-            } else {
-              mapRef.current.setView(currentLocation, 16);
-            }
+            const currentLocationMarker = L.circleMarker([latitude, longitude], {
+              color: '#FFFFFF',
+              fillColor: '#0476D9',
+              radius: 15,
+              fillOpacity: 1,
+              weight: 5
+            }).addTo(mapRef.current);
           }
         },
         () => {
