@@ -1,10 +1,9 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import initStripe from "stripe";
+import { supabaseServer } from "@/utils/supabaseServer";
 
 export async function GET(req: NextRequest, context: { params: { planId: string } }) {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = supabaseServer();
     const { data } = await supabase.auth.getUser();
     const user = data.user;
 

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from 'next/headers';
+import { supabaseServer } from './utils/supabaseServer';
 
 export async function middleware(request: NextRequest) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = supabaseServer();
   const { data: { session } } = await supabase.auth.getSession();
 
   const url = request.nextUrl.clone();
