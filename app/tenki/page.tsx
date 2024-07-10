@@ -18,6 +18,7 @@ const Weather = () => {
     "曇りがち": "曇り",
     "小雨": "雨",
     "適度な雨": "雨",
+    "強い雨":"雨",
     "clear sky": "晴れ",
     "few clouds": "少し雲",
     "scattered clouds": "散在する雲",
