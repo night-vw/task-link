@@ -44,7 +44,7 @@ const SideMenu = () => {
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/tenki" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/tenki" onClick={handleLinkClick} className='flex pr-20'><IoPartlySunnySharp className='pr-2' />天気</Link></li>
             <li className={`-mr-4 -ml-5 py-3 pl-3 text-3xl flex hover:bg-gray-700 ${pathname == "/subscription" ? "bg-gray-600 border-r-4 border-r-indigo-300" : ""}`}><Link href="/subscription" onClick={handleLinkClick} className='flex pr-2'><MdOutlineWorkspacePremium className='pr-2'/>アップグレード</Link></li>
             <li className='absolute bottom-14 left-2 text-2xl ml-1 flex hover:text-gray-300'>
-            <Link href="/account-setting" className='flex'><IoMdSettings className='mt-1 mr-1'/>設定</Link></li>
+            <Link href="/account-setting" className='flex' onClick={handleLinkClick}><IoMdSettings className='mt-1 mr-1'/>設定</Link></li>
             <li className='absolute bottom-4 left-2 text-2xl ml-1 flex hover:text-gray-300'>
               <LogoutButton/>
             </li>
