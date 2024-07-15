@@ -29,8 +29,6 @@ import workIcon from '@/public/work-icon.png';
 import exerciseIcon from '@/public/exercise-icon.png';
 import foodIcon from '@/public/food-icon.png';
 import shoppingIcon from '@/public/shopping-icon.png';
-import { useRouter } from 'next/navigation';
-
 
 const MapComponent = () => {
 
@@ -81,22 +79,19 @@ const MapComponent = () => {
   const [updatePlaceDescription,setUpdatePlaceDescription] = useState(""); 
   const [updateTaskId,setUpdateTaskId] =useState("");
   const [selectedSortOption, setSelectedSortOption] = useState('add_date');
-  const [isSubscribed, setIsSubscribed] = useState(false);
 
-  const router = useRouter();
 
-  
   useEffect(() => {
     const now = new Date();
     const jstTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
     const year = jstTime.getFullYear();
     const month = String(jstTime.getMonth() + 1).padStart(2, '0');
     const day = String(jstTime.getDate()).padStart(2, '0');
-  
+
     const formattedDate = `${year}-${month}-${day}`;
     setCurrentDateTime(formattedDate);
   }, []);
-  
+
 
   useEffect(() => {
     function handleResize() {
@@ -163,40 +158,55 @@ const MapComponent = () => {
       mapRef.current = L.map('map', {
         zoomControl: false,
       }).setView([35.68078249, 139.767235], 16);
-  
+
       L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
         attribution: '<a href="https://developers.google.com/maps/documentation?hl=ja">Google Map</a>',
       }).addTo(mapRef.current);
+
     }
 
-    // 最初の現在地取得
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          if (mapRef.current) {
-            const currentLocation: LatLngTuple = [latitude, longitude];
-            mapRef.current.setView(currentLocation, 16);
+      const success = (position: GeolocationPosition) => {
+        let { latitude, longitude } = position.coords;
+        const accuracy = position.coords.accuracy;
 
-            const currentLocationMarker = L.circleMarker([latitude, longitude], {
-              color: '#FFFFFF',
-              fillColor: '#0476D9',
-              radius: 15,
-              fillOpacity: 1,
-              weight: 5
-            }).addTo(mapRef.current);
-          }
-        },
-        () => {
-          alert("Unable to retrieve your location.");
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
+        console.log(`Latitude: ${latitude}, Longitude: ${longitude}, Accuracy: ${accuracy} meters`);
+
+        if (mapRef.current) {
+          mapRef.current.setView([latitude, longitude], 16);
+
+          const currentLocationMarker = L.circleMarker([latitude, longitude], {
+            color: '#FFFFFF',
+            fillColor: '#0476D9',
+            radius: 15,
+            fillOpacity: 1,
+            weight: 5
+          }).addTo(mapRef.current)
+        }
+
+      };
+
+      const error = () => {
+        alert("Unable to retrieve your location.");
+      };
+
+      navigator.geolocation.getCurrentPosition(success, error, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      });
     } else {
       alert("Geolocation is not supported by this browser.");
     }
+
+    return () => {
+      if (mapRef.current !== null) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
   }, []);
-  
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery) return;
@@ -290,15 +300,20 @@ const MapComponent = () => {
           const { latitude, longitude } = position.coords;
           if (mapRef.current) {
             const currentLocation: LatLngTuple = [latitude, longitude];
-            mapRef.current.setView(currentLocation, 16);
+            const mapBounds = mapRef.current.getBounds();
+            const mapCenter = mapRef.current.getCenter();
+            const mapCenterLatLng = latLng(mapCenter.lat, mapCenter.lng);
 
-            const currentLocationMarker = L.circleMarker([latitude, longitude], {
-              color: '#FFFFFF',
-              fillColor: '#0476D9',
-              radius: 15,
-              fillOpacity: 1,
-              weight: 5
-            }).addTo(mapRef.current);
+            const distance = mapCenterLatLng.distanceTo(latLng(latitude, longitude));
+            const zoomLevel = mapRef.current.getZoom();
+
+            const distanceThreshold = 500;
+
+            if (mapBounds.contains(currentLocation) && distance < distanceThreshold) {
+              mapRef.current.flyTo(currentLocation, zoomLevel);
+            } else {
+              mapRef.current.setView(currentLocation, 16);
+            }
           }
         },
         () => {
@@ -438,7 +453,7 @@ const MapComponent = () => {
     setTaskListVisible(false);
     if (mapRef.current) {
       mapRef.current.flyTo([lat, lon], 16);
-  
+
       // 既存のマーカーを探してポップアップを表示する
       mapRef.current.eachLayer((layer) => {
         if (layer instanceof L.Marker) {
@@ -450,7 +465,7 @@ const MapComponent = () => {
       });
     }
   };
-  
+
 
   const renderTasks = () => {
     const startIndex = currentPage * itemsPerPage;
@@ -468,7 +483,7 @@ const MapComponent = () => {
       );
     });
   };
-  
+
   const handleTouchStart = () => {
     setTimeout(() => {
       document.body.style.overflow = 'hidden'; // スクロールを無効にする
@@ -482,18 +497,18 @@ const MapComponent = () => {
   const changeTaskUpdate = async (event: React.MouseEvent<HTMLButtonElement>) => {
     const buttonId = event.currentTarget.id;
     setUpdateTaskId(buttonId);
-  
+
     try {
       const { data, error } = await supabase
         .from('map_task')
         .select('*')
         .eq('id', buttonId);
-  
+
       if (error) {
         console.error('データの取得に失敗しました:', error);
         return;
       }
-  
+
       if (data && data.length > 0) {
         setUpdateTaskName(data[0].task_name);
         setUpdateDescription(data[0].task_description);
@@ -502,23 +517,23 @@ const MapComponent = () => {
         setUpdatePriority(data[0].priority);
         setUpdatePlaceDescription(data[0].place_description);
       }
-  
+
       setTaskUpdate(!taskUpdate);
     } catch (error) {
       console.error('エラーが発生しました:', error);
     }
   };
-  
+
 
   const changeTaskUpdate_Back = () => {
     setTaskUpdate(false);
   }
-  
+
   const updateTask = async () => {
     setTaskUpdate(false);
-  
+
     const isMobile = window.innerWidth <= 768;
-  
+
     const { data, error } = await supabase
       .from('map_task')
       .update({
@@ -530,13 +545,13 @@ const MapComponent = () => {
         place_description: updatePlaceDescription
       })
       .eq('id', updateTaskId);
-  
+
     if (error) {
       console.error('Error updating task:', error);
       toast.error('タスクの更新に失敗しました');
       return;
     }
-  
+
     toast.success('タスクが更新されました', {
       position: "bottom-right",
       autoClose: 5000,
@@ -547,14 +562,14 @@ const MapComponent = () => {
       progress: undefined,
       className: 'text-base font-black',
     });
-  
+
     fetchTasks(); // ここでタスクの更新後に再取得する
   };
-  
-  
+
+
   const addTaskToSupabase = async (taskData: TaskData) => {
     const { taskName, taskDescription, deadlineBool, deadlineDate, priority, placeDescription, userId, latitude, longitude, category } = taskData;
-  
+
     try {
       const { data, error } = await supabase
         .from('map_task')
@@ -572,11 +587,11 @@ const MapComponent = () => {
             category: category
           }
         ]);
-  
+
       if (error) {
         throw error;
       }
-  
+
       toast.success('タスクが追加されました', {
         position: "bottom-right",
         autoClose: 5000,
@@ -587,7 +602,7 @@ const MapComponent = () => {
         progress: undefined,
         className: 'text-base font-black',
       });
-  
+
       fetchTasks(); // タスク追加後にタスク一覧を再取得してマーカーを表示
     } catch (error) {
       console.error('Error adding task:', error);
@@ -603,33 +618,6 @@ const MapComponent = () => {
       });
     }
   };
-
-  useEffect(() => {
-    const fetchSubscriptionStatus = async () => {
-      const userResponse = await supabase.auth.getUser();
-      const userId = userResponse.data?.user?.id || null;
-  
-      if (userId) {
-        const { data, error } = await supabase
-          .from('profile')
-          .select('is_subscribed')
-          .eq('id', userId)
-          .single();
-  
-        if (error) {
-          console.error('Error fetching subscription status:', error);
-        } else {
-          console.log('Subscription status:', data.is_subscribed);
-          // 必要に応じてステートに保存する
-          setIsSubscribed(data.is_subscribed);
-        }
-      }
-    };
-  
-    fetchSubscriptionStatus();
-  }, []);
-  
-
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -649,34 +637,6 @@ const MapComponent = () => {
     const userResponse = await supabase.auth.getUser();
     const userId = userResponse.data?.user?.id || null;
 
-    // ユーザーの未完了タスクの数をチェック
-    const { data: incompleteTasks, error: countError } = await supabase
-      .from('map_task')
-      .select('*', { count: 'exact' })
-      .eq('user_id', userId)
-      .eq('task_completed', false);
-
-    if (countError) {
-      console.error('Error fetching task count:', countError);
-      toast.error('タスク数の取得に失敗しました', {
-        position: "bottom-right",
-        autoClose: 5000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        className: 'text-base font-black',
-      });
-      return;
-    }
-
-    // 未完了タスクが10個以上の場合はサブスクリプションページにリダイレクト
-    if (incompleteTasks.length >= 9 && !isSubscribed) {
-      router.push('/subscription');
-      return;
-    }
-
     const markerPosition = userMarker?.getLatLng();
     if (!markerPosition) {
       toast.error('マーカーの位置を設定してください。', {
@@ -694,7 +654,7 @@ const MapComponent = () => {
     const { lat, lng } = markerPosition;
 
     const taskData: TaskData = {
-      id: 0, // ダミーID、Supabaseから実際のIDが割り当てられる
+      id: 0, // Dummy ID, will be replaced by actual ID from Supabase
       taskName,
       taskDescription,
       deadlineBool,
@@ -709,34 +669,33 @@ const MapComponent = () => {
 
     await addTaskToSupabase(taskData);
     closeForm();
-};
+  };
 
-  
 
   const fetchTasks = async (sortOption: string = 'add_date') => {
     const userResponse = await supabase.auth.getUser();
     const userId = userResponse.data?.user?.id || null;
-  
+
     let query = supabase
       .from('map_task')
       .select('*')
       .eq('user_id', userId)
       .eq('task_completed', false)
       .order('created_at', { ascending: false });
-  
+
     if (sortOption === 'near_deadline') {
       query = query.gt('deadline_date', new Date().toISOString()).order('deadline_date', { ascending: true });
     } else if (sortOption === 'expired') {
       query = query.lte('deadline_date', new Date().toISOString()).order('priority', { ascending: false });
     }
-  
+
     const { data, error } = await query;
-  
+
     if (error) {
       console.error('Error fetching tasks:', error);
       return;
     }
-  
+
     // クライアントサイドで priority を並び替える
     if (sortOption === 'high_priority') {
       const priorityOrder: { [key: string]: number } = { '高': 3, '中': 2, '低': 1 };
@@ -744,7 +703,7 @@ const MapComponent = () => {
         return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0) || new Date(a.deadline_date).getTime() - new Date(b.deadline_date).getTime();
       });
     }
-  
+
     if (mapRef.current !== null) {
       data.forEach(task => {
         const customIcon = L.icon({
@@ -753,24 +712,24 @@ const MapComponent = () => {
           iconAnchor: [22, 38],
           popupAnchor: [-3, -38],
         });
-  
+
         const marker = L.marker([task.latitude, task.longitude], { icon: customIcon })
           .addTo(mapRef.current as L.Map)
           .bindPopup(`<b>${task.task_name}</b><br>${task.task_description}<br>${task.place_description}`);
       });
     }
-  
+
     setTasks(data.map(task => ({
       ...task,
       taskName: task.task_name, // task_nameをtaskNameにマッピング
     })));
   };
-  
-  
+
+
   useEffect(() => {
     fetchTasks();
   }, []);
-  
+
 
   const confirmDeleteTask = (taskId: number) => {
     if (window.confirm('このタスクを削除してもよろしいですか？')) {
@@ -784,11 +743,11 @@ const MapComponent = () => {
         .from('map_task')
         .delete()
         .eq('id', taskId);
-  
+
       if (error) {
         throw error;
       }
-  
+
       // マーカーを削除する処理
       if (mapRef.current !== null) {
         mapRef.current.eachLayer((layer) => {
@@ -801,7 +760,7 @@ const MapComponent = () => {
           }
         });
       }
-  
+
       toast.success('タスクが削除されました', {
         position: "bottom-right",
         autoClose: 5000,
@@ -812,7 +771,7 @@ const MapComponent = () => {
         progress: undefined,
         className: 'text-base font-black',
       });
-  
+
       fetchTasks(selectedSortOption); // タスク削除後にタスク一覧を再取得
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -828,7 +787,7 @@ const MapComponent = () => {
       });
     }
   };
-  
+
   const handleSortChange = (value: string) => {
     setSelectedSortOption(value);
     fetchTasks(value);
@@ -850,7 +809,7 @@ const MapComponent = () => {
   const handleUpdateDeadlineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUpdateDeadline(e.target.value);
   };
-  
+
   const handleUpdatePriorityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setUpdatePriority(e.target.value);
   };
@@ -861,8 +820,8 @@ const MapComponent = () => {
   useEffect(() => {
     fetchTasks(selectedSortOption);
   }, [selectedSortOption]);
-  
-  
+
+
 
   return (
     <div className="relative w-full h-screen overflow-hidden" onTouchStart={handleTouchStart}>
