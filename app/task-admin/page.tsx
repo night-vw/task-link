@@ -76,7 +76,7 @@ const TaskAdminPage: React.FC = () => {
   
   useEffect(() => {
     fetchUserId().then(fetchTasks);
-
+  
     // 画面の高さに応じてTASKS_PER_PAGEを設定する
     const updateTasksPerPage = () => {
       if(window.innerHeight < 700) {
@@ -88,14 +88,17 @@ const TaskAdminPage: React.FC = () => {
         setTasksPerPage(9);
       }
     };
-
+  
     updateTasksPerPage();
     window.addEventListener('resize', updateTasksPerPage);
-
+  
+    document.body.style.overflow = 'auto'; // ページのロード時にスクロールを有効にする
+  
     return () => {
       window.removeEventListener('resize', updateTasksPerPage);
     };
   }, [userId]);
+  
 
   // タスクの完了状態を切り替える関数
   const toggleTaskCompletion = async (taskId: number) => {

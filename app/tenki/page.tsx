@@ -85,7 +85,9 @@ const Weather = () => {
 
   useEffect(() => {
     getLocationAndFetchWeather();
+    document.body.style.overflow = 'auto'; // ページのロード時にスクロールを有効にする
   }, []);
+  
 
   const backgroundImage = currentWeather ? weatherBackgrounds[weatherDescriptions[currentWeather.weather[0].description] || currentWeather.weather[0].description] : '/image/default.png';
 
