@@ -82,6 +82,13 @@ const Weather = () => {
       setError('このブラウザではGeolocationがサポートされていません。');
     }
   };
+  // ページを開いたときにリロードを行う
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.location.hash = '[]';
+      window.location.reload();
+    }
+  }, []);
 
   useEffect(() => {
     getLocationAndFetchWeather();

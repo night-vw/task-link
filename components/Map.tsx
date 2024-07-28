@@ -92,6 +92,14 @@ const MapComponent = () => {
     setCurrentDateTime(formattedDate);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = '0px';
+    document.body.style.width = '100%';
+  }, []);
+  
+
 
   useEffect(() => {
     function handleResize() {

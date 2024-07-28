@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { Switch } from "@/components/ui/switch";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -30,6 +29,15 @@ const TaskAdminPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true); // ローディング状態を追加
   const [tasksPerPage, setTasksPerPage] = useState(TASKS_PER_PAGE_DEFAULT); // 1ページに表示するタスク数
   const [userId, setUserId] = useState<string | null>(null); // ユーザーID用の状態
+  
+
+  // ページを開いたときにリロードを行う
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.location.hash = '[]';
+      window.location.reload();
+    }
+  }, []);
 
   // SupabaseからユーザーIDを取得する関数
   const fetchUserId = async () => {
