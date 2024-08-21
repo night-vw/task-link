@@ -14,6 +14,7 @@ type Task = {
   priority: string;
   deadline: string | null;
   completed: boolean;
+  comp_date: string ;
 };
 
 // ページネーション用のタスク数
@@ -54,12 +55,12 @@ const TaskAdminPage: React.FC = () => {
   // Supabaseからタスクを取得する関数
   const fetchTasks = async () => {
     if (!userId) return;
-
+  
     const { data, error } = await supabase
       .from('map_task')
-      .select('id, task_name, priority, deadline_date, task_completed')
+      .select('id, task_name, priority, deadline_date, task_completed, completed_date')
       .eq('user_id', userId);
-    
+  
     if (error) {
       console.error('Error fetching tasks:', error);
       return;
@@ -72,6 +73,7 @@ const TaskAdminPage: React.FC = () => {
       priority: task.priority,
       deadline: task.deadline_date || 'なし',
       completed: task.task_completed,
+      comp_date: task.completed_date || '未完了',
     }));
   
     fetchedTasks.sort((a, b) => {
@@ -81,6 +83,7 @@ const TaskAdminPage: React.FC = () => {
     setTasks(fetchedTasks);
     setIsLoading(false); // ローディング終了
   };
+  
   
   useEffect(() => {
     fetchUserId().then(fetchTasks);
@@ -122,14 +125,40 @@ const TaskAdminPage: React.FC = () => {
         return;
       }
 
-      const { error: insertError } = await supabase
-        .from('completed_tasks')
-        .insert({ task_name: taskToComplete.name, user_id: userId });
-
-      if (insertError) {
-        console.error('Error inserting into completed_tasks:', insertError);
-        return;
-      }
+      const { error: insertError, data: insertedData } = await supabase
+      .from('completed_tasks')
+      .insert({ task_name: taskToComplete.name, user_id: userId, task_id: taskId })
+      .select(); // <- これで挿入されたデータが確実に返されるようにします。
+    
+    if (insertError) {
+      console.error('Error inserting into completed_tasks:', insertError);
+      return;
+    } 
+    
+    if (!insertedData || insertedData.length === 0) {
+      console.error('No data returned after insert into completed_tasks');
+      return;
+    }
+    
+    // 複数行が挿入された場合を考慮して、最も最近のcreated_atを持つ行を取得
+    const mostRecentEntry = insertedData.reduce((latest, entry) => {
+      return new Date(entry.created_at) > new Date(latest.created_at) ? entry : latest;
+    });
+    
+    const createdAt = mostRecentEntry.created_at;
+    const completedDate = new Date(createdAt).toISOString().split('T')[0]; //'yyyy-mm-dd'
+    
+    const { error: updateError } = await supabase
+      .from('map_task')
+      .update({ completed_date: completedDate })
+      .eq('id', taskId);
+    
+    if (updateError) {
+      console.error('Error updating completed_date in map_task:', updateError);
+    } else {
+      console.log('completed_date successfully updated in map_task');
+    }
+    
 
       setTasks(tasks.map(task => 
         task.id === taskId ? { ...task, completed: true } : task
@@ -268,7 +297,7 @@ const TaskAdminPage: React.FC = () => {
                       className="px-2 text-sm lg:text-lg sm:px-4 py-1 sm:py-2 md:px-3 md:py-1 lg:px-4 lg:py-2 bg-green-500 text-white rounded"
                     >完了</button>
                     </td>)}
-                  {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-xl md:text-xl lg:text-2xl font-bold">{new Date().toLocaleDateString()}</td>}
+                  {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-xl md:text-xl lg:text-2xl font-bold">{task.comp_date}</td>}
                   {isCompleted && <td className="border px-2 sm:px-4 py-2 sm:py-3">
                     <button
                       onClick={() => confirmDeletion(task.id)}
